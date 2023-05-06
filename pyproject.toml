@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "ratelimit-python"
+version = "0.1.0"
+description = ""
+authors = ["Zgîmbău Tudor <tudor.zgimbau@gmail.com>"]
+readme = "README.md"
+packages = [{include = "ratelimit_python"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
