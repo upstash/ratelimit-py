@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import ClassVar, Literal
 from upstash_py.client import Redis
+from ratelimit_python.utils.time import to_milliseconds
 
 
 class RateLimitAlgorithm(ABC):
     @abstractmethod
     def __init__(self, redis: Redis, prefix: str):
         """
-        :param redis: The Redis client that will be used to execute the algorithm's commands.
-        :param prefix: A prefix to distinguish between the keys used for rate limiting and others.
+        :param redis: the Redis client that will be used to execute the algorithm's commands
+        :param prefix: a prefix to distinguish between the keys used for rate limiting and others
         """
 
         self.redis = redis
@@ -44,18 +45,27 @@ class FixedWindow(RateLimitAlgorithm):
     return current_requests
     """
 
-    def __init__(self, max_number_of_requests: int, window: int, redis: Redis, prefix: str):
+    def __init__(
+        self,
+        redis: Redis,
+        prefix: str,
+        max_number_of_requests: int,
+        window: int,
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms",
+    ):
         """
-        :param max_number_of_requests: The number of requests allowed within the window.
-        :param window: The time unit in requests are limited, in milliseconds.
-        :param redis: The Redis client that will be used to execute the algorithm's commands.
-        :param prefix: A prefix to distinguish between the keys used for rate limiting and others.
+        :param redis: the Redis client that will be used to execute the algorithm's commands
+        :param prefix: a prefix to distinguish between the keys used for rate limiting and others
+
+        :param max_number_of_requests: the number of requests allowed within the window
+        :param window: the number of time units in which requests are limited
+        :param unit: the shorthand version of the time measuring unit
         """
 
         super().__init__(redis, prefix)
 
         self.max_number_of_requests = max_number_of_requests
-        self.window = window
+        self.window = window if unit == "ms" else to_milliseconds(window, unit)
 
     async def is_allowed(self, identifier: str) -> bool:
         """
@@ -70,5 +80,10 @@ class FixedWindow(RateLimitAlgorithm):
                 keys=[key],
                 arguments=[self.window]
             )
+
+        if identifier == "fixed_window_4":
+            print("current:", current_requests)
+
+        print()
 
         return current_requests <= self.max_number_of_requests
