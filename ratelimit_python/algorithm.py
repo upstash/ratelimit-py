@@ -81,9 +81,4 @@ class FixedWindow(RateLimitAlgorithm):
                 arguments=[self.window]
             )
 
-        if identifier == "fixed_window_4":
-            print("current:", current_requests)
-
-        print()
-
         return current_requests <= self.max_number_of_requests
