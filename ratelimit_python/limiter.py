@@ -1,4 +1,4 @@
-from ratelimit_python.algorithm import FixedWindow
+from ratelimit_python.algorithm import FixedWindow, SlidingWindow
 from upstash_py.client import Redis
 from typing import Literal
 
@@ -21,7 +21,7 @@ class RateLimit:
         self,
         max_number_of_requests: int,
         window: int,
-        unit: Literal["ms", "s", "m", "h", "d", "y"]
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms",
     ) -> FixedWindow:
         """
         :param max_number_of_requests: the number of requests allowed within the window
@@ -30,3 +30,17 @@ class RateLimit:
         """
 
         return FixedWindow(self.redis, self.prefix, max_number_of_requests, window, unit)
+
+    def sliding_window(
+        self,
+        max_number_of_requests: int,
+        window: int,
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms"
+    ) -> SlidingWindow:
+        """
+        :param max_number_of_requests: the number of requests allowed within the window
+        :param window: the number of time units in which requests are limited
+        :param unit: the shorthand version of the time measuring unit
+        """
+
+        return SlidingWindow(self.redis, self.prefix, max_number_of_requests, window, unit)

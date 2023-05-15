@@ -514,14 +514,14 @@ testing = ["coverage (>=6.2)", "flaky (>=3.5.0)", "hypothesis (>=5.7.1)", "mypy 
 
 [[package]]
 name = "upstash-py"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.11,<4.0"
 files = [
-    {file = "upstash_py-0.2.0-py3-none-any.whl", hash = "sha256:75289ff83b8c967bacbeea91dc43c5f8591dc02f958e040cd4fce39394996e7b"},
-    {file = "upstash_py-0.2.0.tar.gz", hash = "sha256:d67d076fe416d2d4669deea3dd403d3b9cd49f5e83bab8bc22e009257784c11b"},
+    {file = "upstash_py-0.3.0-py3-none-any.whl", hash = "sha256:1173273008ccce9ae34081eea7d202da709c79501d9f14b0d00585d46995641c"},
+    {file = "upstash_py-0.3.0.tar.gz", hash = "sha256:9a2f390aeeaaba5781d63a9b7940deac89fd42ce2c6fd3e56a416b32225c2d9e"},
 ]
 
 [package.dependencies]
@@ -620,4 +620,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "554ae3b6a10f9eb84654470b90d605fbfeb4519be149fe8cfc6f341f27f7edec"
+content-hash = "b0b0f44213d5301bfc85a4479400a98f880f1f7f3b8faeb98c32ffdb69d44d44"
