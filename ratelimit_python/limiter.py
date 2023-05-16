@@ -1,4 +1,4 @@
-from ratelimit_python.algorithm import FixedWindow, SlidingWindow
+from ratelimit_python.algorithm import FixedWindow, SlidingWindow, TokenBucket
 from upstash_py.client import Redis
 from typing import Literal
 
@@ -44,3 +44,19 @@ class RateLimit:
         """
 
         return SlidingWindow(self.redis, self.prefix, max_number_of_requests, window, unit)
+
+    def token_bucket(
+        self,
+        max_number_of_tokens: int,
+        refill_rate: int,
+        interval: int,
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms"
+    ) -> TokenBucket:
+        """
+        :param max_number_of_tokens: the maximum number of tokens that the bucket can hold
+        :param refill_rate: the number of tokens that are refilled per interval
+        :param interval: the number of time units between each refill
+        :param unit: the shorthand version of the time measuring unit
+        """
+
+        return TokenBucket(self.redis, self.prefix, max_number_of_tokens, refill_rate, interval, unit)

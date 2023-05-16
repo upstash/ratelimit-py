@@ -33,6 +33,11 @@ class RateLimitAlgorithm(ABC):
 
 
 class FixedWindow(RateLimitAlgorithm):
+    """
+    The first request after a window has elapsed triggers the creation of a new one with the specified duration.
+    For each subsequent request, the algorithm checks whether the number of requests has exceeded the limit.
+    """
+
     script: ClassVar[str] = """
     -- "key" will store the number of requests made within the window and will expire once the window elapsed.
     local key     = KEYS[1]
@@ -174,3 +179,94 @@ class SlidingWindow(RateLimitAlgorithm):
             )
 
         return remaining_requests >= 0
+
+
+class TokenBucket(RateLimitAlgorithm):
+    """
+    A bucket is filled with "max_number_of_tokens" that refill at "refill_rate" per "interval".
+    Each request ties to consume one token and if the bucket is empty, the request is rejected.
+    """
+
+    script: ClassVar[str] = """
+    local key                       = KEYS[1]               -- identifier including prefixes
+    local max_number_of_tokens      = tonumber(ARGV[1])     -- max number of tokens
+    local interval                  = tonumber(ARGV[2])     -- size of the window in milliseconds
+    local refill_rate               = tonumber(ARGV[3])     -- how many tokens are refilled after each interval
+    local now                       = tonumber(ARGV[4])     -- current timestamp in milliseconds
+    local remaining                 = 0
+
+    local bucket = redis.call("HMGET", key, "updated_at", "tokens")
+
+    if bucket[1] == false then
+      -- The bucket does not exist yet, create it and set its ttl to "interval".
+      remaining = max_number_of_tokens - 1
+
+      redis.call("HMSET", key, "updated_at", now, "tokens", remaining)
+
+      return {remaining, now + interval}
+    end
+
+    local updated_at = tonumber(bucket[1])
+    local tokens = tonumber(bucket[2])
+
+    if now >= updated_at + interval then
+      if tokens <= 0 then -- No more tokens were left before the refill.
+        remaining = math.min(max_number_of_tokens, refill_rate) - 1
+      else
+        remaining = math.min(max_number_of_tokens, tokens + refill_rate) - 1
+      end
+
+      redis.call("HMSET", key, "updated_at", now, "tokens", remaining)
+      return {remaining, now + interval}
+    end
+    
+    remaining = tokens - 1
+    redis.call("HSET", key, "tokens", remaining)
+
+    return {remaining, updated_at + interval}
+    """
+
+    def __init__(
+        self,
+        redis: Redis,
+        prefix: str,
+        max_number_of_tokens: int,
+        refill_rate: int,
+        interval: int,
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms"
+    ):
+        """
+        :param redis: the Redis client that will be used to execute the algorithm's commands
+        :param prefix: a prefix to distinguish between the keys used for rate limiting and others
+
+        :param max_number_of_tokens: the maximum number of tokens that can be stored in the bucket
+        :param refill_rate: the number of tokens that are refilled per interval
+        :param interval: the number of time units between each refill
+        :param unit: the shorthand version of the time measuring unit
+        """
+
+        super().__init__(redis, prefix)
+
+        self.max_number_of_tokens = max_number_of_tokens
+        self.refill_rate = refill_rate
+        self.interval = interval if unit == "ms" else to_milliseconds(interval, unit)
+
+    async def is_allowed(self, identifier: str) -> bool:
+        """
+        Determine whether the identifier's request should pass.
+        """
+
+        now: float = time_ns() / 1000000
+
+        key: str = f'{self.prefix}:{identifier}'
+
+        async with self.redis:
+            remaining_tokens, next_refill_at = await self.redis.eval(
+                script=TokenBucket.script,
+                keys=[key],
+                arguments=[self.max_number_of_tokens, self.interval, self.refill_rate, now]
+            )
+
+        print(remaining_tokens, next_refill_at)
+
+        return remaining_tokens >= 0
