@@ -4,11 +4,12 @@ from upstash_py.client import Redis
 from ratelimit_python.utils.time import to_milliseconds
 from time import time_ns
 from math import floor
+from ratelimit_python.config import SDK, ALLOW_TELEMETRY
 
 
 class RateLimitAlgorithm(ABC):
     @abstractmethod
-    def __init__(self, redis: Redis, prefix: str):
+    def __init__(self, redis: Redis, prefix: str, allow_telemetry: bool = ALLOW_TELEMETRY):
         """
         :param redis: the Redis client that will be used to execute the algorithm's commands
         :param prefix: a prefix to distinguish between the keys used for rate limiting and others
@@ -16,6 +17,11 @@ class RateLimitAlgorithm(ABC):
 
         self.redis = redis
         self.prefix = prefix
+
+        if allow_telemetry:
+            self.redis.telemetry_data = {
+                "sdk": SDK
+            }
 
     @property
     @abstractmethod
@@ -59,6 +65,7 @@ class FixedWindow(RateLimitAlgorithm):
         max_number_of_requests: int,
         window: int,
         unit: Literal["ms", "s", "m", "h", "d"] = "ms",
+        allow_telemetry: bool = True
     ):
         """
         :param redis: the Redis client that will be used to execute the algorithm's commands
@@ -69,7 +76,7 @@ class FixedWindow(RateLimitAlgorithm):
         :param unit: the shorthand version of the time measuring unit
         """
 
-        super().__init__(redis, prefix)
+        super().__init__(redis, prefix, allow_telemetry)
 
         self.max_number_of_requests = max_number_of_requests
         self.window = window if unit == "ms" else to_milliseconds(window, unit)
@@ -136,7 +143,8 @@ class SlidingWindow(RateLimitAlgorithm):
         prefix: str,
         max_number_of_requests: int,
         window: int,
-        unit: Literal["ms", "s", "m", "h", "d"] = "ms"
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms",
+        allow_telemetry: bool = True
     ):
         """
         :param redis: the Redis client that will be used to execute the algorithm's commands
@@ -147,7 +155,7 @@ class SlidingWindow(RateLimitAlgorithm):
         :param unit: the shorthand version of the time measuring unit
         """
 
-        super().__init__(redis, prefix)
+        super().__init__(redis, prefix, allow_telemetry)
 
         self.max_number_of_requests = max_number_of_requests
         self.window = window if unit == "ms" else to_milliseconds(window, unit)
@@ -233,7 +241,8 @@ class TokenBucket(RateLimitAlgorithm):
         max_number_of_tokens: int,
         refill_rate: int,
         interval: int,
-        unit: Literal["ms", "s", "m", "h", "d"] = "ms"
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms",
+        allow_telemetry: bool = True
     ):
         """
         :param redis: the Redis client that will be used to execute the algorithm's commands
@@ -245,7 +254,7 @@ class TokenBucket(RateLimitAlgorithm):
         :param unit: the shorthand version of the time measuring unit
         """
 
-        super().__init__(redis, prefix)
+        super().__init__(redis, prefix, allow_telemetry)
 
         self.max_number_of_tokens = max_number_of_tokens
         self.refill_rate = refill_rate

@@ -8,7 +8,7 @@ packages = [{include = "ratelimit_python"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-upstash-py = "^0.3.0"
+upstash-py = "^0.6.0"
 pytest = "^7.3.1"
 pytest-asyncio = "^0.21.0"
 
