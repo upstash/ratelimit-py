@@ -13,5 +13,5 @@ class RateLimitResponse(TypedDict):
     # How many requests can still be made within the window. If negative, it means the limit has been exceeded.
     remaining: int
 
-    # The unix time in milliseconds when the limits reset.
-    reset_unix_milliseconds: int
+    # The unix time in milliseconds when the next window begins.
+    next_window_unix_milliseconds: int

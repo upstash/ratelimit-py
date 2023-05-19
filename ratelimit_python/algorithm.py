@@ -100,7 +100,7 @@ class FixedWindow(RateLimitAlgorithm):
             "is_allowed": current_requests <= self.max_number_of_requests,
             "limit": self.max_number_of_requests,
             "remaining": self.max_number_of_requests - current_requests,
-            "reset_unix_milliseconds": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+            "next_window_unix_milliseconds": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
         }
 
 
@@ -196,7 +196,7 @@ class SlidingWindow(RateLimitAlgorithm):
             "is_allowed": remaining_requests >= 0,
             "limit": self.max_number_of_requests,
             "remaining": remaining_requests,
-            "reset_unix_milliseconds": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+            "next_window_unix_milliseconds": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
         }
 
 
@@ -291,5 +291,5 @@ class TokenBucket(RateLimitAlgorithm):
             "is_allowed": remaining_tokens >= 0,
             "limit": self.max_number_of_tokens,
             "remaining": remaining_tokens,
-            "reset_unix_milliseconds": next_refill_at
+            "next_window_unix_milliseconds": next_refill_at
         }
