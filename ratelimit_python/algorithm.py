@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from typing import ClassVar, Literal
 from upstash_py.client import Redis
 from ratelimit_python.utils.time import to_milliseconds
+from ratelimit_python.config import SDK, ALLOW_TELEMETRY
+from ratelimit_python.schema.response import RateLimitResponse
 from time import time_ns
 from math import floor
-from ratelimit_python.config import SDK, ALLOW_TELEMETRY
 
 
 class RateLimitAlgorithm(ABC):
@@ -32,9 +33,9 @@ class RateLimitAlgorithm(ABC):
         """
 
     @abstractmethod
-    async def is_allowed(self, identifier: str) -> bool:
+    async def limit(self, identifier: str) -> RateLimitResponse:
         """
-        Determine whether the identifier's request should pass.
+        Determine whether the identifier's request should pass and return additional metadata.
         """
 
 
@@ -81,9 +82,9 @@ class FixedWindow(RateLimitAlgorithm):
         self.max_number_of_requests = max_number_of_requests
         self.window = window if unit == "ms" else to_milliseconds(window, unit)
 
-    async def is_allowed(self, identifier: str) -> bool:
+    async def limit(self, identifier: str) -> RateLimitResponse:
         """
-        Determine whether the identifier's request should pass.
+        Determine whether the identifier's request should pass and return additional metadata.
         """
 
         key: str = f'{self.prefix}:{identifier}'
@@ -95,7 +96,12 @@ class FixedWindow(RateLimitAlgorithm):
                 arguments=[self.window]
             )
 
-        return current_requests <= self.max_number_of_requests
+        return {
+            "is_allowed": current_requests <= self.max_number_of_requests,
+            "limit": self.max_number_of_requests,
+            "remaining": self.max_number_of_requests - current_requests,
+            "reset_unix_milliseconds": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+        }
 
 
 class SlidingWindow(RateLimitAlgorithm):
@@ -160,12 +166,12 @@ class SlidingWindow(RateLimitAlgorithm):
         self.max_number_of_requests = max_number_of_requests
         self.window = window if unit == "ms" else to_milliseconds(window, unit)
 
-    async def is_allowed(self, identifier: str) -> bool:
+    async def limit(self, identifier: str) -> RateLimitResponse:
         """
-        Determine whether the identifier's request should pass.
+        Determine whether the identifier's request should pass and return additional metadata.
         """
 
-        now: float = time_ns() / 1000000  # Convert to milliseconds and round down.
+        now: float = time_ns() / 1000000  # Convert to milliseconds.
 
         """
         Divide the current time by the window duration and round down 
@@ -186,7 +192,12 @@ class SlidingWindow(RateLimitAlgorithm):
                 arguments=[self.max_number_of_requests, now, self.window]
             )
 
-        return remaining_requests >= 0
+        return {
+            "is_allowed": remaining_requests >= 0,
+            "limit": self.max_number_of_requests,
+            "remaining": remaining_requests,
+            "reset_unix_milliseconds": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+        }
 
 
 class TokenBucket(RateLimitAlgorithm):
@@ -260,9 +271,9 @@ class TokenBucket(RateLimitAlgorithm):
         self.refill_rate = refill_rate
         self.interval = interval if unit == "ms" else to_milliseconds(interval, unit)
 
-    async def is_allowed(self, identifier: str) -> bool:
+    async def limit(self, identifier: str) -> RateLimitResponse:
         """
-        Determine whether the identifier's request should pass.
+        Determine whether the identifier's request should pass and return additional metadata.
         """
 
         now: float = time_ns() / 1000000
@@ -276,6 +287,9 @@ class TokenBucket(RateLimitAlgorithm):
                 arguments=[self.max_number_of_tokens, self.interval, self.refill_rate, now]
             )
 
-        print(remaining_tokens, next_refill_at)
-
-        return remaining_tokens >= 0
+        return {
+            "is_allowed": remaining_tokens >= 0,
+            "limit": self.max_number_of_tokens,
+            "remaining": remaining_tokens,
+            "reset_unix_milliseconds": next_refill_at
+        }
