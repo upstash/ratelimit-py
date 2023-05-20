@@ -14,4 +14,4 @@ class RateLimitResponse(TypedDict):
     remaining: int
 
     # The unix time in milliseconds when the next window begins.
-    next_window_unix_milliseconds: int
+    reset: int

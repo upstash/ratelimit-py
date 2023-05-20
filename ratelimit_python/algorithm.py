@@ -100,7 +100,7 @@ class FixedWindow(RateLimitAlgorithm):
             "is_allowed": current_requests <= self.max_number_of_requests,
             "limit": self.max_number_of_requests,
             "remaining": self.max_number_of_requests - current_requests,
-            "next_window_unix_milliseconds": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+            "reset": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
         }
 
 
@@ -169,6 +169,9 @@ class SlidingWindow(RateLimitAlgorithm):
     async def limit(self, identifier: str) -> RateLimitResponse:
         """
         Determine whether the identifier's request should pass and return additional metadata.
+
+        Although we return the unix time when the next window begins (via "reset"), the limit is still enforced
+        between the two intervals.
         """
 
         now: float = time_ns() / 1000000  # Convert to milliseconds.
@@ -196,7 +199,7 @@ class SlidingWindow(RateLimitAlgorithm):
             "is_allowed": remaining_requests >= 0,
             "limit": self.max_number_of_requests,
             "remaining": remaining_requests,
-            "next_window_unix_milliseconds": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+            "reset": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
         }
 
 
@@ -291,5 +294,5 @@ class TokenBucket(RateLimitAlgorithm):
             "is_allowed": remaining_tokens >= 0,
             "limit": self.max_number_of_tokens,
             "remaining": remaining_tokens,
-            "next_window_unix_milliseconds": next_refill_at
+            "reset": next_refill_at
         }
