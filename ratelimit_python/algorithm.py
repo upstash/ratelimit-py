@@ -4,7 +4,7 @@ from upstash_py.client import Redis
 from ratelimit_python.utils.time import to_milliseconds
 from ratelimit_python.config import SDK, ALLOW_TELEMETRY
 from ratelimit_python.schema.response import RateLimitResponse
-from time import time_ns
+from time import time_ns, sleep
 from math import floor
 
 
@@ -37,6 +37,30 @@ class RateLimitAlgorithm(ABC):
         """
         Determine whether the identifier's request should pass and return additional metadata.
         """
+
+    async def block_until_ready(self, identifier: str, timeout: int) -> RateLimitResponse:
+        """
+        If a request is denied, wait for it to pass in the given timeout in milliseconds
+        and if it doesn't, return the last response.
+        """
+
+        if timeout <= 0:
+            raise Exception("Timeout must be greater than 0.")
+
+        response: RateLimitResponse = await self.limit(identifier)
+
+        if response["is_allowed"]:
+            return response
+
+        deadline: int = time_ns() + timeout * 1000000  # Transform in nanoseconds.
+
+        while response["is_allowed"] is False and time_ns() < deadline:
+            # Transform the reset time from milliseconds to seconds and the sleep time in seconds.
+            sleep((min(response["reset"] * 1000000, deadline) - time_ns()) / 1000000000)
+
+            response = await self.limit(identifier)
+
+        return response
 
 
 class FixedWindow(RateLimitAlgorithm):
