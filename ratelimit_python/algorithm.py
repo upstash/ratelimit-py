@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import ClassVar, Literal
 from upstash_py.client import Redis
 from ratelimit_python.utils.time import to_milliseconds
-from ratelimit_python.config import SDK, ALLOW_TELEMETRY, PREFIX
+from ratelimit_python.config import SDK, PREFIX
 from ratelimit_python.schema.response import RateLimitResponse
 from time import time_ns, sleep
 from math import floor
@@ -10,18 +10,16 @@ from math import floor
 
 class RateLimitAlgorithm(ABC):
     @abstractmethod
-    def __init__(self, redis: Redis, prefix: str = PREFIX, allow_telemetry: bool = ALLOW_TELEMETRY):
+    def __init__(self, redis: Redis, prefix: str = PREFIX):
         """
         :param redis: the Redis client that will be used to execute the algorithm's commands
         :param prefix: a prefix to distinguish between the keys used for rate limiting and others
-
-        :param allow_telemetry: whether collecting non-identifiable telemetry data is allowed
         """
 
         self.redis = redis
         self.prefix = prefix
 
-        if allow_telemetry:
+        if redis.allow_telemetry:
             self.redis.telemetry_data = {
                 "sdk": SDK
             }
@@ -91,7 +89,6 @@ class FixedWindow(RateLimitAlgorithm):
         max_number_of_requests: int,
         window: int,
         unit: Literal["ms", "s", "m", "h", "d"] = "ms",
-        allow_telemetry: bool = True,
         prefix: str = PREFIX,
     ):
         """
@@ -101,11 +98,9 @@ class FixedWindow(RateLimitAlgorithm):
         :param max_number_of_requests: the number of requests allowed within the window
         :param window: the number of time units in which requests are limited
         :param unit: the shorthand version of the time measuring unit
-
-        :param allow_telemetry: whether collecting non-identifiable telemetry data is allowed
         """
 
-        super().__init__(redis, prefix, allow_telemetry)
+        super().__init__(redis, prefix)
 
         self.max_number_of_requests = max_number_of_requests
         self.window = window if unit == "ms" else to_milliseconds(window, unit)
@@ -177,7 +172,6 @@ class SlidingWindow(RateLimitAlgorithm):
         max_number_of_requests: int,
         window: int,
         unit: Literal["ms", "s", "m", "h", "d"] = "ms",
-        allow_telemetry: bool = True,
         prefix: str = PREFIX,
     ):
         """
@@ -187,11 +181,9 @@ class SlidingWindow(RateLimitAlgorithm):
         :param max_number_of_requests: the number of requests allowed within the window
         :param window: the number of time units in which requests are limited
         :param unit: the shorthand version of the time measuring unit
-
-        :param allow_telemetry: whether collecting non-identifiable telemetry data is allowed
         """
 
-        super().__init__(redis, prefix, allow_telemetry)
+        super().__init__(redis, prefix)
 
         self.max_number_of_requests = max_number_of_requests
         self.window = window if unit == "ms" else to_milliseconds(window, unit)
@@ -285,7 +277,6 @@ class TokenBucket(RateLimitAlgorithm):
         refill_rate: int,
         interval: int,
         unit: Literal["ms", "s", "m", "h", "d"] = "ms",
-        allow_telemetry: bool = True,
         prefix: str = PREFIX,
     ):
         """
@@ -296,11 +287,9 @@ class TokenBucket(RateLimitAlgorithm):
         :param refill_rate: the number of tokens that are refilled per interval
         :param interval: the number of time units between each refill
         :param unit: the shorthand version of the time measuring unit
-
-        :param allow_telemetry: whether collecting non-identifiable telemetry data is allowed
         """
 
-        super().__init__(redis, prefix, allow_telemetry)
+        super().__init__(redis, prefix)
 
         self.max_number_of_tokens = max_number_of_tokens
         self.refill_rate = refill_rate

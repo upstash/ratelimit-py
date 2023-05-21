@@ -1,5 +1,5 @@
 from ratelimit_python.algorithm import FixedWindow, SlidingWindow, TokenBucket
-from ratelimit_python.config import ALLOW_TELEMETRY, PREFIX
+from ratelimit_python.config import PREFIX
 from upstash_py.client import Redis
 from typing import Literal
 
@@ -9,17 +9,14 @@ class RateLimit:
     A class that incorporates all the algorithms to provide a smoother initialisation experience.
     """
 
-    def __init__(self, redis: Redis, prefix: str = PREFIX, allow_telemetry: bool = ALLOW_TELEMETRY):
+    def __init__(self, redis: Redis, prefix: str = PREFIX):
         """
         :param redis: the Redis client that will be used to execute the algorithm's commands
         :param prefix: a prefix to distinguish between the keys used for rate limiting and others
-
-        :param allow_telemetry: whether collecting non-identifiable telemetry data is allowed
         """
 
         self.redis = redis
         self.prefix = prefix
-        self.allow_telemetry = allow_telemetry
 
     def fixed_window(
         self,
@@ -33,7 +30,7 @@ class RateLimit:
         :param unit: the shorthand version of the time measuring unit
         """
 
-        return FixedWindow(self.redis, max_number_of_requests, window, unit, self.allow_telemetry, self.prefix)
+        return FixedWindow(self.redis, max_number_of_requests, window, unit, self.prefix)
 
     def sliding_window(
         self,
@@ -47,7 +44,7 @@ class RateLimit:
         :param unit: the shorthand version of the time measuring unit
         """
 
-        return SlidingWindow(self.redis, max_number_of_requests, window, unit, self.allow_telemetry, self.prefix)
+        return SlidingWindow(self.redis, max_number_of_requests, window, unit, self.prefix)
 
     def token_bucket(
         self,
@@ -69,6 +66,5 @@ class RateLimit:
             refill_rate,
             interval,
             unit,
-            self.allow_telemetry,
             self.prefix,
         )
