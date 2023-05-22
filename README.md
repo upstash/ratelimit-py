@@ -17,7 +17,6 @@ The sdk is currently compatible with python 3.10 and above.
   - [Telemetry](#telemetry)
   - [Block until ready](#block-until-ready)
   - [Timeout](#timeout)
-  - [Use with mypy](#use-with-mypy)
 - [Ratelimiting algorithms](#ratelimiting-algorithms)
   - [Fixed Window](#fixed-window)
     - [Pros:](#pros)
@@ -230,10 +229,6 @@ async def main() -> str:
   except TimeoutError:
     return "Request passed"
 ```
-
-
-## Use with mypy
-TBA after release.
 
 
 # Ratelimiting algorithms
