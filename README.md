@@ -33,8 +33,8 @@ The sdk is currently compatible with python 3.10 and above.
     - [Usage:](#usage-2)
 - [Contributing](#contributing)
   - [Preparing the environment](#preparing-the-environment)
-  - [Running tests](#running-tests)
   - [Adding new algorithms](#adding-new-algorithms)
+  - [Running tests](#running-tests)
   - [Releasing](#releasing)
 
 <!-- tocstop -->
@@ -49,9 +49,10 @@ The sdk is currently compatible with python 3.10 and above.
 pip install upstash-ratelimit
 ```
 
+
 ## Setup database client
 To be able to use upstash-ratelimit, you need to create a database on [Upstash](https://console.upstash.com/) and instantiate
-a client with the serverless driver (which will be released separately in the following months).
+a client with the serverless driver (which will be announced separately in the following months and is not production-ready yet).
 
 ```python
 from upstash_py.client import Redis
@@ -98,6 +99,7 @@ allow_telemetry: bool = True
 telemetry_data: TelemetryData | None = None
 ```
 
+
 ## Usage
 ```python
 from ratelimit_python.limiter import RateLimit
@@ -105,7 +107,7 @@ from ratelimit_python.schema.response import RateLimitResponse
 
 from upstash_py.client import Redis
 
-# Create a ratelimit instance and load the Redis credentials from environment.
+# Create a ratelimit instance and load the Redis credentials from the environment.
 rate_limit = RateLimit(Redis.from_env()) # Optionally, pass your own client instance.
 
 # Chose one algorithm.
@@ -154,13 +156,15 @@ class RateLimitResponse(TypedDict):
     reset: int
 ```
 
+
 ## Telemetry
 The underlying serverless driver can collect the following anonymous telemetry:
   - the runtime (ex: `python@v.3.10.0`)
   - the sdk or sdks you're using (ex: `upstash-py@development, upstash-ratelimit@v.0.1.0`)
   - the platform you're running on (ex: `AWS-lambda`)
 
-If you want to opt out, simply pass `allow_telemetry=False` to the Redis client.
+If you want to opt-out, simply pass `allow_telemetry=False` to the Redis client.
+
 
 ## Block until ready
 You also have the option to try and wait for a request to pass in the given timeout.
@@ -190,6 +194,7 @@ if not request_result["is_allowed"]:
 else:
     print("Request passed!")
 ```
+
 
 ## Timeout
 If you worry that network issues can cause your application to reject requests, you can use python's `wait_for` to 
@@ -226,5 +231,123 @@ async def main() -> str:
     return "Request passed"
 ```
 
+
 ## Use with mypy
 TBA after release.
+
+
+# Ratelimiting algorithms
+
+## Fixed Window
+This algorithm divides time into windows of fixed duration. The first request after a window has elapsed triggers the creation of a new one. 
+For each subsequent request, the algorithm checks whether the number of requests has exceeded the limit.
+
+### Pros
+- Very cheap in terms of data size and computation
+- Newer requests are not starved due to a high burst in the past
+
+### Cons
+- Can cause high bursts at the window boundaries to leak through
+
+### Usage
+```python
+from ratelimit_python.limiter import RateLimit
+
+from upstash_py.client import Redis
+
+rate_limit = RateLimit(Redis.from_env())
+
+fixed_window = rate_limit.fixed_window(
+  max_number_of_requests=1,
+  window=3,
+  unit="s"
+)
+```
+
+
+## Sliding Window
+Combined approach of sliding window and sliding logs that calculates a weighted score between two windows
+to decide if a request should pass.
+
+### Pros
+- Approaches the issue near boundaries from fixed window.
+
+### Cons
+- More expensive in terms of storage and computation
+- It's only an approximation because it assumes a uniform request flow in the previous window
+
+### Usage
+```python
+from ratelimit_python.limiter import RateLimit
+
+from upstash_py.client import Redis
+
+rate_limit = RateLimit(Redis.from_env())
+
+sliding_window = rate_limit.sliding_window(
+  max_number_of_requests=1,
+  window=3,
+  unit="s"
+)
+```
+
+## Token Bucket
+A bucket is filled with "max_number_of_tokens" that refill at "refill_rate" per "interval".
+Each request tries to consume one token and if the bucket is empty, the request is rejected.
+
+### Pros
+- Bursts of requests are smoothed out, and you can process them at a constant rate
+- Allows setting a higher initial burst limit by setting maxTokens higher than refillRate
+
+### Cons
+- Expensive in terms of computation
+
+### Usage
+```python
+from ratelimit_python.limiter import RateLimit
+
+from upstash_py.client import Redis
+
+rate_limit = RateLimit(Redis.from_env())
+
+token_bucket = rate_limit.token_bucket(
+  max_number_of_tokens=2,
+  refill_rate=1,
+  interval=3,
+  unit="s"
+)
+```
+
+# Contributing
+
+## Preparing the environment
+This project uses [Poetry](https://python-poetry.org) for packaging and dependency management. 
+
+See [this](https://python-poetry.org/docs/basic-usage/#using-your-virtual-environment) for a detailed explanation on how
+to work with the virtual environment.
+
+You will also need a database on [Upstash](https://console.upstash.com/). If you already have one, make sure to empty it before running 
+tests. You can do so by sending `FLUSHDB` from the console.
+
+
+## Adding new algorithms
+All the algorithms subclass and implement abstract [RateLimitAlgorithm](./ratelimit_python/algorithm.py)'s methods.
+
+They are also grouped in the [RateLimit](./ratelimit_python/limiter.py) class for ease of use.
+
+
+## Running tests
+All tests live in the [test](./tests) folder.
+
+Only the limiting logic of 100%-accuracy algorithms and other utility functions are unit-tested.
+
+To run all the tests, use `poetry run pytest` in the virtual environment, while located in the test folder.
+
+## Releasing
+To create a new release, first use Poetry's [version](https://python-poetry.org/docs/cli/#version) command.
+
+You will then need to connect your PyPi API token to Poetry. 
+A simple tutorial showcasing how to do it was posted by Tony Tran
+[here](https://www.digitalocean.com/community/tutorials/how-to-publish-python-packages-to-pypi-using-poetry-on-ubuntu-22-04)
+
+From there, use `poetry publish --build`.

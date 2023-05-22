@@ -228,7 +228,7 @@ class SlidingWindow(RateLimitAlgorithm):
 class TokenBucket(RateLimitAlgorithm):
     """
     A bucket is filled with "max_number_of_tokens" that refill at "refill_rate" per "interval".
-    Each request ties to consume one token and if the bucket is empty, the request is rejected.
+    Each request tries to consume one token and if the bucket is empty, the request is rejected.
     """
 
     script: ClassVar[str] = """
