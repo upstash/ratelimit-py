@@ -1,6 +1,6 @@
-from ratelimit_python.algorithm import FixedWindow, SlidingWindow, TokenBucket
-from ratelimit_python.config import PREFIX
-from upstash_py.client import Redis
+from upstash_ratelimit.algorithm import FixedWindow, SlidingWindow, TokenBucket
+from upstash_ratelimit.config import PREFIX
+from upstash_redis.client import Redis
 from typing import Literal
 
 

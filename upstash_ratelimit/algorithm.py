@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar, Literal
-from upstash_py.client import Redis
-from ratelimit_python.utils.time import to_milliseconds
-from ratelimit_python.config import SDK, PREFIX
-from ratelimit_python.schema.response import RateLimitResponse
+from upstash_redis.client import Redis
+from upstash_ratelimit.utils.time import to_milliseconds
+from upstash_ratelimit.config import SDK, PREFIX
+from upstash_ratelimit.schema.response import RateLimitResponse
 from time import time_ns, sleep
 from math import floor
 

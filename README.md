@@ -54,7 +54,7 @@ To be able to use upstash-ratelimit, you need to create a database on [Upstash](
 a client with the serverless driver (which will be announced separately in the following months and is not production-ready yet).
 
 ```python
-from upstash_py.client import Redis
+from upstash_redis.client import Redis
 
 redis = Redis(url="UPSTASH_REDIS_REST_URL", token="UPSTASH_REDIS_REST_TOKEN")
 ```
@@ -62,7 +62,7 @@ redis = Redis(url="UPSTASH_REDIS_REST_URL", token="UPSTASH_REDIS_REST_TOKEN")
 Or, if you want to automatically load the credentials from the environment
 
 ```python
-from upstash_py.client import Redis
+from upstash_redis.client import Redis
 
 redis = Redis.from_env()
 ```
@@ -100,26 +100,27 @@ telemetry_data: TelemetryData | None = None
 
 
 ## Usage
-```python
-from ratelimit_python.limiter import RateLimit
-from ratelimit_python.schema.response import RateLimitResponse
 
-from upstash_py.client import Redis
+```python
+from upstash_ratelimit.limiter import RateLimit
+from upstash_ratelimit.schema.response import RateLimitResponse
+
+from upstash_redis.client import Redis
 
 # Create a ratelimit instance and load the Redis credentials from the environment.
-rate_limit = RateLimit(Redis.from_env()) # Optionally, pass your own client instance.
+rate_limit = RateLimit(Redis.from_env())  # Optionally, pass your own client instance.
 
 # Chose one algorithm.
 fixed_window = rate_limit.fixed_window(
-  max_number_of_requests=1,
-  window=3,
-  unit="s"
+    max_number_of_requests=1,
+    window=3,
+    unit="s"
 )
 
 """
 Use a constant to limit all the requests together.
 For enforcing individual limits, use some kind of identifying variable (IP address, API key, etc.).
-""" 
+"""
 identifier: str = "constant"
 
 request_result: RateLimitResponse = await fixed_window.limit(identifier)
@@ -171,17 +172,17 @@ If the first request is blocked and the timeout exceeds the time needed for the 
 we wait and retry once that happens.
 
 ```python
-from ratelimit_python.limiter import RateLimit
-from ratelimit_python.schema.response import RateLimitResponse
+from upstash_ratelimit.limiter import RateLimit
+from upstash_ratelimit.schema.response import RateLimitResponse
 
-from upstash_py.client import Redis
+from upstash_redis.client import Redis
 
 rate_limit = RateLimit(Redis.from_env())
 
 fixed_window = rate_limit.fixed_window(
-  max_number_of_requests=1,
-  window=3,
-  unit="s"
+    max_number_of_requests=1,
+    window=3,
+    unit="s"
 )
 
 identifier: str = "constant"
@@ -200,34 +201,35 @@ If you worry that network issues can cause your application to reject requests, 
 allow the requests which exceed a given timeout to pass regardless of what the current limit is.
 
 ```python
-from ratelimit_python.limiter import RateLimit
-from ratelimit_python.schema.response import RateLimitResponse
+from upstash_ratelimit.limiter import RateLimit
+from upstash_ratelimit.schema.response import RateLimitResponse
 
-from upstash_py.client import Redis
+from upstash_redis.client import Redis
 
 from asyncio import wait_for
 
 rate_limit = RateLimit(Redis.from_env())
 
 fixed_window = rate_limit.fixed_window(
-  max_number_of_requests=1,
-  window=3,
-  unit="s"
+    max_number_of_requests=1,
+    window=3,
+    unit="s"
 )
 
 identifier: str = "constant"
 
+
 async def main() -> str:
-  try:
-    request_result: RateLimitResponse = await wait_for(fixed_window.limit(identifier), 2.0) # Wait for two seconds.
-    
-    if not request_result["is_allowed"]:
-        return f"{identifier} is rate-limited!"
-    
-    return "Request passed!"
-  
-  except TimeoutError:
-    return "Request passed"
+    try:
+        request_result: RateLimitResponse = await wait_for(fixed_window.limit(identifier), 2.0)  # Wait for two seconds.
+
+        if not request_result["is_allowed"]:
+            return f"{identifier} is rate-limited!"
+
+        return "Request passed!"
+
+    except TimeoutError:
+        return "Request passed"
 ```
 
 
@@ -245,17 +247,18 @@ For each subsequent request, the algorithm checks whether the number of requests
 - Can cause high bursts at the window boundaries to leak through
 
 ### Usage
-```python
-from ratelimit_python.limiter import RateLimit
 
-from upstash_py.client import Redis
+```python
+from upstash_ratelimit.limiter import RateLimit
+
+from upstash_redis.client import Redis
 
 rate_limit = RateLimit(Redis.from_env())
 
 fixed_window = rate_limit.fixed_window(
-  max_number_of_requests=1,
-  window=3,
-  unit="s"
+    max_number_of_requests=1,
+    window=3,
+    unit="s"
 )
 ```
 
@@ -272,17 +275,18 @@ to decide if a request should pass.
 - It's only an approximation because it assumes a uniform request flow in the previous window
 
 ### Usage
-```python
-from ratelimit_python.limiter import RateLimit
 
-from upstash_py.client import Redis
+```python
+from upstash_ratelimit.limiter import RateLimit
+
+from upstash_redis.client import Redis
 
 rate_limit = RateLimit(Redis.from_env())
 
 sliding_window = rate_limit.sliding_window(
-  max_number_of_requests=1,
-  window=3,
-  unit="s"
+    max_number_of_requests=1,
+    window=3,
+    unit="s"
 )
 ```
 
@@ -298,18 +302,19 @@ Each request tries to consume one token and if the bucket is empty, the request 
 - Expensive in terms of computation
 
 ### Usage
-```python
-from ratelimit_python.limiter import RateLimit
 
-from upstash_py.client import Redis
+```python
+from upstash_ratelimit.limiter import RateLimit
+
+from upstash_redis.client import Redis
 
 rate_limit = RateLimit(Redis.from_env())
 
 token_bucket = rate_limit.token_bucket(
-  max_number_of_tokens=2,
-  refill_rate=1,
-  interval=3,
-  unit="s"
+    max_number_of_tokens=2,
+    refill_rate=1,
+    interval=3,
+    unit="s"
 )
 ```
 
@@ -326,9 +331,9 @@ tests. You can do so by sending `FLUSHDB` from the console.
 
 
 ## Adding new algorithms
-All the algorithms subclass and implement abstract [RateLimitAlgorithm](./ratelimit_python/algorithm.py)'s methods.
+All the algorithms subclass and implement abstract [RateLimitAlgorithm](upstash_ratelimit/algorithm.py)'s methods.
 
-They are also grouped in the [RateLimit](./ratelimit_python/limiter.py) class for ease of use.
+They are also grouped in the [RateLimit](upstash_ratelimit/limiter.py) class for ease of use.
 
 
 ## Running tests

@@ -1,4 +1,4 @@
-from ratelimit_python.utils.time import to_milliseconds
+from upstash_ratelimit.utils.time import to_milliseconds
 
 
 def test_with_seconds() -> None:

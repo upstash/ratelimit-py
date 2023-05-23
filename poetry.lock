@@ -556,24 +556,24 @@ testing = ["coverage (>=6.2)", "flaky (>=3.5.0)", "hypothesis (>=5.7.1)", "mypy 
 
 [[package]]
 name = "typing-extensions"
-version = "4.5.0"
+version = "4.6.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
-    {file = "typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
+    {file = "typing_extensions-4.6.0-py3-none-any.whl", hash = "sha256:6ad00b63f849b7dcc313b70b6b304ed67b2b2963b3098a33efe18056b1a9a223"},
+    {file = "typing_extensions-4.6.0.tar.gz", hash = "sha256:ff6b238610c747e44c268aa4bb23c8c735d665a63726df3f9431ce707f2aa768"},
 ]
 
 [[package]]
-name = "upstash-py"
-version = "0.8.0"
+name = "upstash-redis"
+version = "0.10.0"
 description = ""
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "upstash_py-0.8.0-py3-none-any.whl", hash = "sha256:ad29f6118c153fc5df718ce44b33a43f6173d770f1f8cfb9a03d3c2ccc12f1fd"},
-    {file = "upstash_py-0.8.0.tar.gz", hash = "sha256:b610c6f453e291cbc5d7efc70c9ec33b37ef2dbadaa109fb33059ac9624151c5"},
+    {file = "upstash_redis-0.10.0-py3-none-any.whl", hash = "sha256:bf2e350a83f7851cdad835f357a97cc39981064e609a088c66409a8b10c90665"},
+    {file = "upstash_redis-0.10.0.tar.gz", hash = "sha256:908a7cd0bc5b87e938d34c15aa92e1a50f762390cb3466f5beee4214ccd1f249"},
 ]
 
 [package.dependencies]
@@ -671,4 +671,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "1d17abf435dee3e35236291ea9e8eedb97645e5766a7bf4db4cea8d147807134"
+content-hash = "c54b0be9f0266327ccfceb2dbff4c58723e64212fb10bf0c6910a3ed2fa67a68"
