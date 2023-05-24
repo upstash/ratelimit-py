@@ -11,7 +11,7 @@ The sdk is currently compatible with python 3.10 and above.
 
 - [Quick Start](#quick-start)
   - [Install](#install)
-    - [pypi](#pypi)
+    - [PyPi](#pypi)
   - [Setup database client](#setup-database-client)
   - [Usage](#usage)
   - [Telemetry](#telemetry)
@@ -42,16 +42,22 @@ The sdk is currently compatible with python 3.10 and above.
 
 ## Install
 
-### pypi
+### PyPi
 
 ```bash
 pip install upstash-ratelimit
 ```
 
+If you are using a packaging and dependency management tool like [Poetry](https://python-poetry.org), you might want to check
+the respective docs in regard to adding a dependency. For example, in a Poetry-managed virtual environment, you can use:
+
+```bash
+poetry add upstash-ratelimit
+```
 
 ## Setup database client
 To be able to use upstash-ratelimit, you need to create a database on [Upstash](https://console.upstash.com/) and instantiate
-a client with the serverless driver (which will be announced separately in the following months and is not production-ready yet).
+a client with the serverless driver:
 
 ```python
 from upstash_redis.client import Redis
@@ -59,7 +65,7 @@ from upstash_redis.client import Redis
 redis = Redis(url="UPSTASH_REDIS_REST_URL", token="UPSTASH_REDIS_REST_TOKEN")
 ```
 
-Or, if you want to automatically load the credentials from the environment
+Or, if you want to automatically load the credentials from the environment:
 
 ```python
 from upstash_redis.client import Redis
@@ -67,23 +73,14 @@ from upstash_redis.client import Redis
 redis = Redis.from_env()
 ```
 
-The constructor can take even more optional parameters, which are (types expanded):
+The constructor can take even more optional parameters, some of them being (types expanded):
+
 ```python
-from typing import Literal
-from typing import TypedDict
-
-
-class TelemetryData(TypedDict, total=False):
-    runtime: str
-    sdk: str
-    platform: str
-
-
 url: str
 
 token: str
 
-rest_encoding: str | Literal[False] = "base64"
+rest_encoding: Literal["base64"] | Literal[False] = "base64"
 
 rest_retries: int = 1
 
@@ -94,8 +91,6 @@ allow_deprecated: bool = False
 format_return: bool = True
 
 allow_telemetry: bool = True
-
-telemetry_data: TelemetryData | None = None
 ```
 
 
@@ -134,7 +129,7 @@ else:
 You can also pass a `prefix` to the `RateLimit` constructor to distinguish between the keys used for rate limiting and others.
 It defaults to `"ratelimit"`.
 
-The `limit` method also returns some metadata that might be useful 
+The `limit` method also returns some metadata that might be useful :
 
 ```python
 from typing import TypedDict
@@ -348,6 +343,6 @@ To create a new release, first use Poetry's [version](https://python-poetry.org/
 
 You will then need to connect your PyPi API token to Poetry. 
 A simple tutorial showcasing how to do it was posted by Tony Tran
-[here](https://www.digitalocean.com/community/tutorials/how-to-publish-python-packages-to-pypi-using-poetry-on-ubuntu-22-04)
+[on DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-publish-python-packages-to-pypi-using-poetry-on-ubuntu-22-04)
 
 From there, use `poetry publish --build`.
