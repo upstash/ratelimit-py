@@ -336,7 +336,12 @@ All tests live in the [test](./tests) folder.
 
 Only the limiting logic of 100%-accuracy algorithms and other utility functions are unit-tested.
 
-To run all the tests, use `poetry run pytest` in the virtual environment, while located in the test folder.
+To run all the tests, make sure you are in the `tests` folder and have the poetry virtual environment activated with all 
+the necessary dependencies. Set the `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` environment variables and run:
+
+```bash
+poetry run pytest
+```
 
 ## Releasing
 To create a new release, first use Poetry's [version](https://python-poetry.org/docs/cli/#version) command.
