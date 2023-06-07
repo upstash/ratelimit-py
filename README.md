@@ -118,12 +118,14 @@ For enforcing individual limits, use some kind of identifying variable (IP addre
 """
 identifier: str = "constant"
 
-request_result: RateLimitResponse = await fixed_window.limit(identifier)
 
-if not request_result["is_allowed"]:
-    print(f"{identifier} is rate-limited!")
-else:
-    print("Request passed!")
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.limit(identifier)
+
+    if not request_result["is_allowed"]:
+        return f"{identifier} is rate-limited!"
+    else:
+        return "Request passed!"
 ```
 
 You can also pass a `prefix` to the `RateLimit` constructor to distinguish between the keys used for rate limiting and others.
@@ -182,12 +184,14 @@ fixed_window = rate_limit.fixed_window(
 
 identifier: str = "constant"
 
-request_result: RateLimitResponse = await fixed_window.block_until_ready(identifier, timeout=2000)
 
-if not request_result["is_allowed"]:
-    print(f"The {identifier}'s request cannot be processed, even after 2 seconds.")
-else:
-    print("Request passed!")
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.block_until_ready(identifier, timeout=2000)
+
+    if not request_result["is_allowed"]:
+        return f"The {identifier}'s request cannot be processed, even after 2 seconds."
+    else:
+        return "Request passed!"
 ```
 
 
