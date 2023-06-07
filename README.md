@@ -17,6 +17,7 @@ The sdk is currently compatible with python 3.10 and above.
   - [Telemetry](#telemetry)
   - [Block until ready](#block-until-ready)
   - [Timeout](#timeout)
+  - [Rate-limiting outbound requests](#rate-limiting-outbound-requests)
 - [Ratelimiting algorithms](#ratelimiting-algorithms)
   - [Fixed Window](#fixed-window)
     - [Pros:](#pros)
@@ -229,6 +230,38 @@ async def main() -> str:
 
     except TimeoutError:
         return "Request passed"
+```
+
+
+## Rate-limiting outbound requests
+It's also possible to limit the number of requests you're making to an external API.
+
+```python
+from upstash_ratelimit.limiter import RateLimit
+from upstash_ratelimit.schema.response import RateLimitResponse
+
+from upstash_redis.client import Redis
+
+rate_limit = RateLimit(Redis.from_env())
+
+fixed_window = rate_limit.fixed_window(
+    max_number_of_requests=1,
+    window=3,
+    unit="s"
+)
+
+identifier: str = "constant"  # Or, use an identifier to limit your requests to a certain endpoint.
+
+
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.limit(identifier)
+
+    if not request_result["is_allowed"]:
+        return f"{identifier} is rate-limited!"
+    else:
+        # Call the API
+        # ...
+        return "Request passed!"
 ```
 
 
