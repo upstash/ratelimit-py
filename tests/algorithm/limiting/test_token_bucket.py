@@ -7,12 +7,12 @@ token_bucket = rate_limit.token_bucket(max_number_of_tokens=1, refill_rate=1, in
 
 
 @mark.asyncio
-async def test_below_max():
+async def test_below_max() -> None:
     assert (await token_bucket.limit("token_bucket_1"))["is_allowed"] is True
     
 
 @mark.asyncio
-async def test_above_max():
+async def test_above_max() -> None:
     await token_bucket.limit("token_bucket_2")
 
     assert (await token_bucket.limit("token_bucket_2"))["is_allowed"] is False
@@ -20,7 +20,7 @@ async def test_above_max():
 
 
 @mark.asyncio
-async def test_after_window():
+async def test_after_window() -> None:
     # Exhaust the request limit.
     await token_bucket.limit("token_bucket_3")
     sleep(3)
@@ -29,7 +29,7 @@ async def test_after_window():
 
 
 @mark.asyncio
-async def test_with_non_ms_unit():
+async def test_with_non_ms_unit() -> None:
     token_bucket_with_seconds = rate_limit.token_bucket(max_number_of_tokens=1, refill_rate=1, interval=3, unit="s")
 
     # Exhaust the request limit.
@@ -47,7 +47,7 @@ burst_token_bucket = rate_limit.token_bucket(max_number_of_tokens=2, refill_rate
 
 
 @mark.asyncio
-async def test_burst():
+async def test_burst() -> None:
     # Exhaust the request limit.
     assert (await burst_token_bucket.limit("burst_token_bucket_1"))["is_allowed"] is True
     assert (await burst_token_bucket.limit("burst_token_bucket_1"))["is_allowed"] is True
@@ -61,7 +61,7 @@ async def test_burst():
 
 
 @mark.asyncio
-async def test_with_positive_number_of_tokens_before_refill():
+async def test_with_positive_number_of_tokens_before_refill() -> None:
     assert (await burst_token_bucket.limit("burst_token_bucket_2"))["is_allowed"] is True
 
     sleep(3)

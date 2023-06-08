@@ -6,7 +6,7 @@ fixed_window = rate_limit.fixed_window(max_number_of_requests=1, window=3000, un
 
 
 @mark.asyncio
-async def test_before_timeout():
+async def test_before_timeout() -> None:
     # Exhaust the request limit.
     await fixed_window.limit("timeout_1")
 
@@ -14,7 +14,7 @@ async def test_before_timeout():
 
 
 @mark.asyncio
-async def test_after_timeout():
+async def test_after_timeout() -> None:
     # Exhaust the request limit.
     await fixed_window.limit("timeout_2")
 
