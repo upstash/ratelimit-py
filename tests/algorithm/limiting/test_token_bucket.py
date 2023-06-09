@@ -23,6 +23,8 @@ async def test_above_max() -> None:
 async def test_after_window() -> None:
     # Exhaust the request limit.
     await token_bucket.limit("token_bucket_3")
+
+    # Wait for the refill.
     sleep(3)
 
     assert (await token_bucket.limit("token_bucket_3"))["is_allowed"] is True

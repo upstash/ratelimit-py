@@ -22,6 +22,8 @@ async def test_above_max() -> None:
 async def test_after_window() -> None:
     # Exhaust the request limit.
     await fixed_window.limit("fixed_window_3")
+
+    # Wait for the reset.
     sleep(3)
 
     assert (await fixed_window.limit("fixed_window_3"))["is_allowed"] is True
@@ -35,6 +37,8 @@ async def test_with_non_ms_unit() -> None:
 
     # Exhaust the request limit.
     assert (await fixed_window_with_seconds.limit("fixed_window_4"))["is_allowed"] is False
+
+    # Wait for the reset.
     sleep(3)
 
     assert (await fixed_window_with_seconds.limit("fixed_window_4"))["is_allowed"] is True
