@@ -5,7 +5,7 @@ fixed_window = rate_limit.fixed_window(max_number_of_requests=1, window=3000, un
 
 
 @mark.asyncio
-async def test_first_request() -> None:
+async def test_before_the_first_request() -> None:
     assert await fixed_window.remaining("fixed_window_remaining_1") == 1
 
 

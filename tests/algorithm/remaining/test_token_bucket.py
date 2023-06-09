@@ -6,7 +6,7 @@ token_bucket = rate_limit.token_bucket(max_number_of_tokens=1, refill_rate=1, in
 
 
 @mark.asyncio
-async def test_first_request() -> None:
+async def test_before_the_first_request() -> None:
     assert await token_bucket.remaining("token_bucket_remaining_1") == 1
 
 
