@@ -7,14 +7,14 @@ token_bucket = rate_limit.token_bucket(max_number_of_tokens=1, refill_rate=1, in
 
 @mark.asyncio
 async def test_first_request() -> None:
-    assert await token_bucket.remaining_requests("token_bucket_remaining_1") == 1
+    assert await token_bucket.remaining("token_bucket_remaining_1") == 1
 
 
 @mark.asyncio
 async def test_after_the_first_request() -> None:
     await token_bucket.limit("token_bucket_remaining_2")
 
-    assert await token_bucket.remaining_requests("token_bucket_remaining_2") == 0
+    assert await token_bucket.remaining("token_bucket_remaining_2") == 0
 
 
 # Use a client that has different maximum number of tokens and refill rate.
@@ -30,7 +30,7 @@ async def test_after_burst() -> None:
     # Wait for the refill.
     sleep(2)
 
-    assert await burst_token_bucket.remaining_requests("burst_token_bucket_remaining_1") == 1
+    assert await burst_token_bucket.remaining("burst_token_bucket_remaining_1") == 1
 
 
 @mark.asyncio
@@ -43,4 +43,4 @@ async def test_after_burst_with_positive_number_of_tokens_before_the_refill() ->
     """
     sleep(2)
 
-    assert await burst_token_bucket.remaining_requests("burst_token_bucket_remaining_2") == 2
+    assert await burst_token_bucket.remaining("burst_token_bucket_remaining_2") == 2

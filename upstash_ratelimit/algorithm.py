@@ -65,7 +65,7 @@ class RateLimitAlgorithm(ABC):
         return response
 
     @abstractmethod
-    async def remaining_requests(self, identifier: str) -> int:
+    async def remaining(self, identifier: str) -> int:
         """
         Determine the number of identifier's remaining requests.
         """
@@ -135,7 +135,7 @@ class FixedWindow(RateLimitAlgorithm):
             "reset": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
         }
 
-    async def remaining_requests(self, identifier: str) -> int:
+    async def remaining(self, identifier: str) -> int:
         """
         Determine the number of identifier's remaining requests.
         """
@@ -255,7 +255,7 @@ class SlidingWindow(RateLimitAlgorithm):
             "reset": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
         }
 
-    async def remaining_requests(self, identifier: str) -> int:
+    async def remaining(self, identifier: str) -> int:
         """
         Determine the number of identifier's remaining requests.
         """
@@ -395,7 +395,7 @@ class TokenBucket(RateLimitAlgorithm):
             "reset": next_refill_at
         }
 
-    async def remaining_requests(self, identifier: str) -> int:
+    async def remaining(self, identifier: str) -> int:
         """
         Determine the number of identifier's remaining requests.
         """
