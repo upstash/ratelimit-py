@@ -340,8 +340,12 @@ To run all the tests, make sure you are in the `tests` folder and have the poetr
 the necessary dependencies. Set the `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` environment variables and run:
 
 ```bash
-poetry run pytest
+poetry run pytest --import-mode importlib
 ```
+
+The reason we need to use the `importlib` mode is because there are multiple test files with the same name. See the 
+[pytest docs](https://docs.pytest.org/en/stable/explanation/pythonpath.html#import-modes) for more info.
+
 
 ## Releasing
 To create a new release, first use Poetry's [version](https://python-poetry.org/docs/cli/#version) command.
