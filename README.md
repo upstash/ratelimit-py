@@ -334,7 +334,7 @@ They are also grouped in the [RateLimit](upstash_ratelimit/limiter.py) class for
 ## Running tests
 All tests live in the [test](./tests) folder.
 
-Only the limiting logic of 100%-accuracy algorithms and other utility functions are unit-tested.
+Only the logic of 100%-accuracy algorithms and other utility functions are unit-tested.
 
 To run all the tests, make sure you are in the `tests` folder and have the poetry virtual environment activated with all 
 the necessary dependencies. Set the `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` environment variables and run:
@@ -345,6 +345,9 @@ poetry run pytest --import-mode importlib
 
 The reason we need to use the `importlib` mode is because there are multiple test files with the same name. See the 
 [pytest docs](https://docs.pytest.org/en/stable/explanation/pythonpath.html#import-modes) for more info.
+
+**Warning**: The current evaluation speed of the tests does not take the HTTP requests duration into account. 
+Because of that, if a request takes more than 2 seconds to complete, a test might fail.
 
 
 ## Releasing

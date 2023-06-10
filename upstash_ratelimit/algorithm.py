@@ -310,8 +310,7 @@ class TokenBucket(RateLimitAlgorithm):
 
     local bucket = redis.call("HMGET", key, "updated_at", "tokens")
 
-    if bucket[1] == false then
-      -- The bucket does not exist yet, create it and set its ttl to "interval".
+    if bucket[1] == false then -- The bucket does not exist
       remaining = max_number_of_tokens - 1
 
       redis.call("HMSET", key, "updated_at", now, "tokens", remaining)
@@ -323,14 +322,18 @@ class TokenBucket(RateLimitAlgorithm):
     local tokens = tonumber(bucket[2])
 
     if now >= updated_at + interval then
+      local number_of_refills = math.floor((now - updated_at)/interval)
+    
       if tokens <= 0 then -- No more tokens were left before the refill.
-        remaining = math.min(max_number_of_tokens, refill_rate) - 1
+        remaining = math.min(max_number_of_tokens, number_of_refills * refill_rate) - 1
       else
-        remaining = math.min(max_number_of_tokens, tokens + refill_rate) - 1
+        remaining = math.min(max_number_of_tokens, tokens + number_of_refills * refill_rate) - 1
       end
+      
+      local last_refill = updated_at + number_of_refills * interval
 
-      redis.call("HMSET", key, "updated_at", now, "tokens", remaining)
-      return {remaining, now + interval}
+      redis.call("HMSET", key, "updated_at", last_refill, "tokens", remaining)
+      return {remaining, last_refill + interval}
     end
     
     remaining = tokens - 1
@@ -416,8 +419,6 @@ class TokenBucket(RateLimitAlgorithm):
             return tokens
 
         remaining_requests: int
-
-        print(tokens)
 
         if tokens <= 0:  # No more tokens were left before the refill.
             remaining_requests = min(self.max_number_of_tokens, self.refill_rate)
