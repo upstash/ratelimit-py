@@ -33,6 +33,7 @@ class RateLimitAlgorithm(ABC):
         However, replacing it with a class attribute has the same effect.
         """
 
+    # Limiting methods
     @abstractmethod
     async def limit(self, identifier: str) -> RateLimitResponse:
         """
@@ -64,11 +65,23 @@ class RateLimitAlgorithm(ABC):
 
         return response
 
+    # Metadata methods
     @abstractmethod
     async def remaining(self, identifier: str) -> int:
         """
         Determine the number of identifier's remaining requests.
         """
+
+    @abstractmethod
+    async def reset(self, identifier: str) -> int:
+        """
+        Determine the unix time in milliseconds when the next window begins.
+        """
+
+    # Helpers & utils.
+    @property
+    def current_time_in_milliseconds(self) -> float:
+        return time_ns() / 1000000
 
 
 class FixedWindow(RateLimitAlgorithm):
@@ -81,14 +94,22 @@ class FixedWindow(RateLimitAlgorithm):
     -- "key" will store the number of requests made within the window and will expire once the window elapsed.
     local key     = KEYS[1]
     local window  = ARGV[1]
+    local now     = ARGV[2] -- current timestamp in milliseconds
 
-    local current_requests = redis.call("INCR", key)
+    local current_requests = redis.call("HINCRBY", key, "requests", 1)
+    
     if current_requests == 1 then
         -- Set the expiry time to the window duration once the first request has been made.
         redis.call("PEXPIRE", key, window)
+        
+        redis.call("HSET", key, "expiry_time", now + window)
+        
+        return {current_requests, now + window}
     end
 
-    return current_requests
+    local expiry_time = tonumber(redis.call("HGET", key, "expiry_time"))
+
+    return {current_requests, expiry_time}
     """
 
     def __init__(
@@ -122,17 +143,20 @@ class FixedWindow(RateLimitAlgorithm):
         key: str = f'{self.prefix}:{identifier}'
 
         async with self.redis:
-            current_requests: int = await self.redis.eval(
+            current_requests: int
+            expiry_time: int
+
+            current_requests, expiry_time = await self.redis.eval(
                 script=FixedWindow.script,
                 keys=[key],
-                arguments=[self.window]
+                arguments=[self.window, self.current_time_in_milliseconds]
             )
 
         return {
             "is_allowed": current_requests <= self.max_number_of_requests,
             "limit": self.max_number_of_requests,
             "remaining": self.max_number_of_requests - current_requests,
-            "reset": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+            "reset": expiry_time,
         }
 
     async def remaining(self, identifier: str) -> int:
@@ -143,12 +167,27 @@ class FixedWindow(RateLimitAlgorithm):
         key: str = f'{self.prefix}:{identifier}'
 
         async with self.redis:
-            current_requests: str | None = await self.redis.get(key)
+            current_requests: str | None = await self.redis.hget(key, "requests")
 
         if current_requests is None:  # The identifier hasn't made any request in the current window.
             return self.max_number_of_requests
 
         return self.max_number_of_requests - int(current_requests)
+
+    async def reset(self, identifier: str) -> int:
+        """
+        Determine the unix time in milliseconds when the next window begins.
+        """
+
+        key: str = f'{self.prefix}:{identifier}'
+
+        async with self.redis:
+            expiry_time: str | None = await self.redis.hget(key, "expiry_time")
+
+        if expiry_time is None:  # The identifier hasn't made any request in the current window.
+            raise Exception("The specified identifier is not rate-limited.")
+
+        return int(float(expiry_time))
 
 
 class SlidingWindow(RateLimitAlgorithm):
@@ -162,15 +201,15 @@ class SlidingWindow(RateLimitAlgorithm):
       local current_key             = KEYS[1]                      -- identifier including prefixes
       local previous_key            = KEYS[2]                      -- key of the previous bucket
       local max_number_of_requests  = tonumber(ARGV[1])            -- max number of requests per window
-      local now                     = ARGV[2]                      -- current timestamp in milliseconds
-      local window                  = ARGV[3]                      -- interval in milliseconds
+      local now                     = tonumber(ARGV[2])            -- current timestamp in milliseconds
+      local window                  = tonumber(ARGV[3])            -- interval in milliseconds
 
-      local requests_in_current_window = redis.call("GET", current_key)
+      local requests_in_current_window = tonumber(redis.call("GET", current_key))
       if requests_in_current_window == false then
         requests_in_current_window = -1
       end
 
-      local requests_in_previous_window = redis.call("GET", previous_key)
+      local requests_in_previous_window = tonumber(redis.call("GET", previous_key))
       if requests_in_previous_window == false then
         requests_in_previous_window = 0
       end
@@ -211,10 +250,6 @@ class SlidingWindow(RateLimitAlgorithm):
 
         self.max_number_of_requests = max_number_of_requests
         self.window = window if unit == "ms" else to_milliseconds(window, unit)
-
-    @property
-    def current_time_in_milliseconds(self) -> float:
-        return time_ns() / 1000000
 
     """
     Divide the current time by the window duration and round down 
@@ -293,6 +328,13 @@ class SlidingWindow(RateLimitAlgorithm):
 
         return self.max_number_of_requests - requests_in_current_window
 
+    async def reset(self, identifier: str) -> int:
+        """
+        Determine the unix time in milliseconds when the next window begins.
+        """
+
+        return floor((time_ns() / 1000000) / self.window) * self.window + self.window
+
 
 class TokenBucket(RateLimitAlgorithm):
     """
@@ -367,10 +409,6 @@ class TokenBucket(RateLimitAlgorithm):
         self.refill_rate = refill_rate
         self.interval = interval if unit == "ms" else to_milliseconds(interval, unit)
 
-    @property
-    def current_time_in_milliseconds(self) -> float:
-        return time_ns() / 1000000
-
     async def limit(self, identifier: str) -> RateLimitResponse:
         """
         Increment identifier's request counter, determine whether it should pass
@@ -380,6 +418,9 @@ class TokenBucket(RateLimitAlgorithm):
         key: str = f'{self.prefix}:{identifier}'
 
         async with self.redis:
+            remaining_tokens: int
+            next_refill_at: int
+
             remaining_tokens, next_refill_at = await self.redis.eval(
                 script=TokenBucket.script,
                 keys=[key],
@@ -426,3 +467,29 @@ class TokenBucket(RateLimitAlgorithm):
             remaining_requests = min(self.max_number_of_tokens, tokens + self.refill_rate)
 
         return remaining_requests
+
+    async def reset(self, identifier: str) -> int:
+        """
+        Determine the unix time in milliseconds when the next window begins.
+        """
+
+        key: str = f'{self.prefix}:{identifier}'
+
+        now: float = self.current_time_in_milliseconds
+
+        async with self.redis:
+            updated_at: str | None = await self.redis.hget(key, "updated_at")
+
+        if updated_at is None:  # The bucket does not exist.
+            raise Exception("The specified identifier is not rate-limited.")
+
+        float_updated_at = int(float(updated_at))
+
+        if now < float_updated_at + self.interval:
+            return float_updated_at + self.interval
+
+        number_of_refills: int = floor((now - float_updated_at) / self.interval)
+
+        last_refill: int = float_updated_at + number_of_refills * self.interval
+
+        return last_refill + self.interval
