@@ -17,6 +17,7 @@ The sdk is currently compatible with python 3.10 and above.
   - [Telemetry](#telemetry)
   - [Block until ready](#block-until-ready)
   - [Timeout](#timeout)
+  - [Rate-limiting outbound requests](#rate-limiting-outbound-requests)
 - [Ratelimiting algorithms](#ratelimiting-algorithms)
   - [Fixed Window](#fixed-window)
     - [Pros:](#pros)
@@ -118,12 +119,14 @@ For enforcing individual limits, use some kind of identifying variable (IP addre
 """
 identifier: str = "constant"
 
-request_result: RateLimitResponse = await fixed_window.limit(identifier)
 
-if not request_result["is_allowed"]:
-    print(f"{identifier} is rate-limited!")
-else:
-    print("Request passed!")
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.limit(identifier)
+
+    if not request_result["is_allowed"]:
+        return f"{identifier} is rate-limited!"
+    else:
+        return "Request passed!"
 ```
 
 You can also pass a `prefix` to the `RateLimit` constructor to distinguish between the keys used for rate limiting and others.
@@ -182,12 +185,14 @@ fixed_window = rate_limit.fixed_window(
 
 identifier: str = "constant"
 
-request_result: RateLimitResponse = await fixed_window.block_until_ready(identifier, timeout=2000)
 
-if not request_result["is_allowed"]:
-    print(f"The {identifier}'s request cannot be processed, even after 2 seconds.")
-else:
-    print("Request passed!")
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.block_until_ready(identifier, timeout=2000)
+
+    if not request_result["is_allowed"]:
+        return f"The {identifier}'s request cannot be processed, even after 2 seconds."
+    else:
+        return "Request passed!"
 ```
 
 
@@ -225,6 +230,38 @@ async def main() -> str:
 
     except TimeoutError:
         return "Request passed"
+```
+
+
+## Rate-limiting outbound requests
+It's also possible to limit the number of requests you're making to an external API.
+
+```python
+from upstash_ratelimit.limiter import RateLimit
+from upstash_ratelimit.schema.response import RateLimitResponse
+
+from upstash_redis.client import Redis
+
+rate_limit = RateLimit(Redis.from_env())
+
+fixed_window = rate_limit.fixed_window(
+    max_number_of_requests=1,
+    window=3,
+    unit="s"
+)
+
+identifier: str = "constant"  # Or, use an identifier to limit your requests to a certain endpoint.
+
+
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.limit(identifier)
+
+    if not request_result["is_allowed"]:
+        return f"{identifier} is rate-limited!"
+    else:
+        # Call the API
+        # ...
+        return "Request passed!"
 ```
 
 
