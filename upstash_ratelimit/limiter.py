@@ -1,6 +1,6 @@
 from upstash_ratelimit.algorithm import FixedWindow, SlidingWindow, TokenBucket
 from upstash_ratelimit.config import PREFIX
-from upstash_redis.client import Redis
+from upstash_redis.asyncio import Redis
 from typing import Literal
 
 
@@ -33,13 +33,15 @@ class RateLimit:
         :param unit: the shorthand version of the time measuring unit
         """
 
-        return FixedWindow(self.redis, max_number_of_requests, window, unit, self.prefix)
+        return FixedWindow(
+            self.redis, max_number_of_requests, window, unit, self.prefix
+        )
 
     def sliding_window(
         self,
         max_number_of_requests: int,
         window: int,
-        unit: Literal["ms", "s", "m", "h", "d"] = "ms"
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms",
     ) -> SlidingWindow:
         """
         Combined approach of sliding logs and fixed window with lower storage
@@ -51,14 +53,16 @@ class RateLimit:
         :param unit: the shorthand version of the time measuring unit
         """
 
-        return SlidingWindow(self.redis, max_number_of_requests, window, unit, self.prefix)
+        return SlidingWindow(
+            self.redis, max_number_of_requests, window, unit, self.prefix
+        )
 
     def token_bucket(
         self,
         max_number_of_tokens: int,
         refill_rate: int,
         interval: int,
-        unit: Literal["ms", "s", "m", "h", "d"] = "ms"
+        unit: Literal["ms", "s", "m", "h", "d"] = "ms",
     ) -> TokenBucket:
         """
         A bucket is filled with "max_number_of_tokens" that refill at "refill_rate" per "interval".

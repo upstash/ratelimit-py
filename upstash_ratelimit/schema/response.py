@@ -5,6 +5,7 @@ class RateLimitResponse(TypedDict):
     """
     The response given by the rate-limiting methods, with additional metadata.
     """
+
     is_allowed: bool
 
     # The maximum number of requests allowed within a window.

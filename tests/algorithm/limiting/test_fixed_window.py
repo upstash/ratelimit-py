@@ -29,12 +29,20 @@ async def test_after_window():
 
 @mark.asyncio
 async def test_with_non_ms_unit():
-    fixed_window_with_seconds = rate_limit.fixed_window(max_number_of_requests=1, window=3, unit="s")
+    fixed_window_with_seconds = rate_limit.fixed_window(
+        max_number_of_requests=1, window=3, unit="s"
+    )
 
-    assert (await fixed_window_with_seconds.limit("fixed_window_4"))["is_allowed"] is True
+    assert (await fixed_window_with_seconds.limit("fixed_window_4"))[
+        "is_allowed"
+    ] is True
 
     # Exhaust the request limit.
-    assert (await fixed_window_with_seconds.limit("fixed_window_4"))["is_allowed"] is False
+    assert (await fixed_window_with_seconds.limit("fixed_window_4"))[
+        "is_allowed"
+    ] is False
     sleep(3)
 
-    assert (await fixed_window_with_seconds.limit("fixed_window_4"))["is_allowed"] is True
+    assert (await fixed_window_with_seconds.limit("fixed_window_4"))[
+        "is_allowed"
+    ] is True

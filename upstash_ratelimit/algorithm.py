@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar, Literal
-from upstash_redis.client import Redis
+from upstash_redis.asyncio import Redis
 from upstash_ratelimit.utils.time import to_milliseconds
 from upstash_ratelimit.config import SDK, PREFIX
 from upstash_ratelimit.schema.response import RateLimitResponse
@@ -20,9 +20,7 @@ class RateLimitAlgorithm(ABC):
         self.prefix = prefix
 
         if redis.allow_telemetry:
-            self.redis.telemetry_data = {
-                "sdk": SDK
-            }
+            self.redis.telemetry_data = {"sdk": SDK}
 
     @property
     @abstractmethod
@@ -38,7 +36,9 @@ class RateLimitAlgorithm(ABC):
         Determine whether the identifier's request should pass and return additional metadata.
         """
 
-    async def block_until_ready(self, identifier: str, timeout: int) -> RateLimitResponse:
+    async def block_until_ready(
+        self, identifier: str, timeout: int
+    ) -> RateLimitResponse:
         """
         If a request is denied, wait for it to pass in the given timeout in milliseconds
         and if it doesn't, return the last response.
@@ -69,7 +69,9 @@ class FixedWindow(RateLimitAlgorithm):
     For each subsequent request, the algorithm checks whether the number of requests has exceeded the limit.
     """
 
-    script: ClassVar[str] = """
+    script: ClassVar[
+        str
+    ] = """
     -- "key" will store the number of requests made within the window and will expire once the window elapsed.
     local key     = KEYS[1]
     local window  = ARGV[1]
@@ -110,20 +112,19 @@ class FixedWindow(RateLimitAlgorithm):
         Determine whether the identifier's request should pass and return additional metadata.
         """
 
-        key: str = f'{self.prefix}:{identifier}'
+        key: str = f"{self.prefix}:{identifier}"
 
         async with self.redis:
             current_requests: int = await self.redis.eval(
-                script=FixedWindow.script,
-                keys=[key],
-                arguments=[self.window]
+                script=FixedWindow.script, keys=[key], args=[self.window]
             )
 
         return {
             "is_allowed": current_requests <= self.max_number_of_requests,
             "limit": self.max_number_of_requests,
             "remaining": self.max_number_of_requests - current_requests,
-            "reset": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+            "reset": floor((time_ns() / 1000000) / self.window) * self.window
+            + self.window,
         }
 
 
@@ -134,7 +135,9 @@ class SlidingWindow(RateLimitAlgorithm):
     weighted score between two windows.
     """
 
-    script: ClassVar[str] = """
+    script: ClassVar[
+        str
+    ] = """
       local current_key             = KEYS[1]                      -- identifier including prefixes
       local previous_key            = KEYS[2]                      -- key of the previous bucket
       local max_number_of_requests  = tonumber(ARGV[1])            -- max number of requests per window
@@ -206,22 +209,23 @@ class SlidingWindow(RateLimitAlgorithm):
 
         previous_window: int = current_window - self.window
 
-        current_key: str = f'{self.prefix}:{identifier}:{current_window}'
+        current_key: str = f"{self.prefix}:{identifier}:{current_window}"
 
-        previous_key: str = f'{self.prefix}:{identifier}:{previous_window}'
+        previous_key: str = f"{self.prefix}:{identifier}:{previous_window}"
 
         async with self.redis:
             remaining_requests: int = await self.redis.eval(
                 script=SlidingWindow.script,
                 keys=[current_key, previous_key],
-                arguments=[self.max_number_of_requests, now, self.window]
+                args=[self.max_number_of_requests, now, self.window],
             )
 
         return {
             "is_allowed": remaining_requests >= 0,
             "limit": self.max_number_of_requests,
             "remaining": remaining_requests,
-            "reset": floor((time_ns() / 1000000) / self.window) * self.window + self.window,
+            "reset": floor((time_ns() / 1000000) / self.window) * self.window
+            + self.window,
         }
 
 
@@ -231,7 +235,9 @@ class TokenBucket(RateLimitAlgorithm):
     Each request tries to consume one token and if the bucket is empty, the request is rejected.
     """
 
-    script: ClassVar[str] = """
+    script: ClassVar[
+        str
+    ] = """
     local key                       = KEYS[1]               -- identifier including prefixes
     local max_number_of_tokens      = tonumber(ARGV[1])     -- max number of tokens
     local interval                  = tonumber(ARGV[2])     -- size of the window in milliseconds
@@ -302,18 +308,18 @@ class TokenBucket(RateLimitAlgorithm):
 
         now: float = time_ns() / 1000000
 
-        key: str = f'{self.prefix}:{identifier}'
+        key: str = f"{self.prefix}:{identifier}"
 
         async with self.redis:
             remaining_tokens, next_refill_at = await self.redis.eval(
                 script=TokenBucket.script,
                 keys=[key],
-                arguments=[self.max_number_of_tokens, self.interval, self.refill_rate, now]
+                args=[self.max_number_of_tokens, self.interval, self.refill_rate, now],
             )
 
         return {
             "is_allowed": remaining_tokens >= 0,
             "limit": self.max_number_of_tokens,
             "remaining": remaining_tokens,
-            "reset": next_refill_at
+            "reset": next_refill_at,
         }
