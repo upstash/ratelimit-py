@@ -335,6 +335,15 @@ class SlidingWindow(RateLimitAlgorithm):
         If the identifier is not rate-limited, the returned value will be -1.
         """
 
+        current_key: str = f'{self.prefix}:{identifier}:{self.current_window}'
+
+        previous_key: str = f'{self.prefix}:{identifier}:{self.previous_window}'
+
+        async with self.redis:
+            # The identifier hasn't made any requests in either the previous or the current window.
+            if await self.redis.exists(previous_key, current_key) == 0:
+                return -1
+
         return floor((time_ns() / 1000000) / self.window) * self.window + self.window
 
 
