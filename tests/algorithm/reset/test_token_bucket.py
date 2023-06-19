@@ -7,10 +7,7 @@ token_bucket = rate_limit.token_bucket(max_number_of_tokens=1, refill_rate=1, in
 
 @mark.asyncio
 async def test_before_the_first_request() -> None:
-    with raises(Exception) as exception:
-        await token_bucket.reset("token_bucket_reset_1")
-
-    assert str(exception.value) == "The specified identifier is not rate-limited."
+    assert await token_bucket.reset("token_bucket_reset_1") == -1
 
 
 @mark.asyncio

@@ -35,7 +35,7 @@ async def test_after_burst() -> None:
 
 @mark.asyncio
 async def test_after_burst_with_positive_number_of_tokens_before_the_refill() -> None:
-    print(await burst_token_bucket.limit("burst_token_bucket_remaining_2"))
+    await burst_token_bucket.limit("burst_token_bucket_remaining_2")
 
     """
     At this point the bucket should've had 1 token. 

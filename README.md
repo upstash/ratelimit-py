@@ -231,8 +231,7 @@ async def main() -> str:
 # Ratelimiting algorithms
 
 ## Fixed Window
-This algorithm divides time into windows of fixed duration. The first request after a window has elapsed triggers the creation of a new one. 
-For each subsequent request, the algorithm checks whether the number of requests has exceeded the limit.
+The time is divided into windows of fixed length and each window has a maximum number of allowed requests.
 
 ### Pros
 - Very cheap in terms of data size and computation
