@@ -28,7 +28,6 @@ jobs:
           poetry publish --no-interaction
 
       - name: Generate release tag
-        id: get_tag_name
         run: echo "RELEASE_TAG=v$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
 
       - name: Create GitHub Release
