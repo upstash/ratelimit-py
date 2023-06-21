@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "upstash_ratelimit_a"
-version = "0.1.4"
+version = "0.1.6"
 description = ""
 authors = ["Zgîmbău Tudor <tudor.zgimbau@gmail.com>"]
 readme = "README.md"
