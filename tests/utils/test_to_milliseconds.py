@@ -1,4 +1,5 @@
 from upstash_ratelimit.utils.time import to_milliseconds
+from pytest import raises
 
 
 def test_with_seconds() -> None:
@@ -15,3 +16,10 @@ def test_with_hours() -> None:
 
 def test_with_days() -> None:
     assert to_milliseconds(2, "d") == 172800000
+
+
+def test_with_invalid() -> None:
+    with raises(Exception) as exception:
+        to_milliseconds(2, "x")
+
+    assert str(exception.value) == "Unsupported unit."

@@ -15,4 +15,7 @@ async def test_before_the_first_request() -> None:
 async def test_after_the_first_request() -> None:
     await fixed_window.limit("fixed_window_reset_2")
 
-    assert await fixed_window.reset("fixed_window_reset_2") == floor((time_ns() / 1000000) / 3000) * 3000 + 3000
+    assert (
+        await fixed_window.reset("fixed_window_reset_2")
+        == floor((time_ns() / 1000000) / 3000) * 3000 + 3000
+    )

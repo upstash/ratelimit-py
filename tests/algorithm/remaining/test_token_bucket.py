@@ -2,7 +2,9 @@ from tests.client import rate_limit
 from pytest import mark
 from time import sleep
 
-token_bucket = rate_limit.token_bucket(max_number_of_tokens=1, refill_rate=1, interval=3000, unit="ms")
+token_bucket = rate_limit.token_bucket(
+    max_number_of_tokens=1, refill_rate=1, interval=3000, unit="ms"
+)
 
 
 @mark.asyncio
@@ -18,7 +20,9 @@ async def test_after_the_first_request() -> None:
 
 
 # Use a client that has different maximum number of tokens and refill rate.
-burst_token_bucket = rate_limit.token_bucket(max_number_of_tokens=2, refill_rate=1, interval=2000, unit="ms")
+burst_token_bucket = rate_limit.token_bucket(
+    max_number_of_tokens=2, refill_rate=1, interval=2000, unit="ms"
+)
 
 
 @mark.asyncio
