@@ -268,8 +268,7 @@ async def main() -> str:
 # Ratelimiting algorithms
 
 ## Fixed Window
-This algorithm divides time into windows of fixed duration. The first request after a window has elapsed triggers the creation of a new one. 
-For each subsequent request, the algorithm checks whether the number of requests has exceeded the limit.
+The time is divided into windows of fixed length and each window has a maximum number of allowed requests.
 
 ### Pros
 - Very cheap in terms of data size and computation
@@ -371,14 +370,21 @@ They are also grouped in the [RateLimit](upstash_ratelimit/limiter.py) class for
 ## Running tests
 All tests live in the [test](./tests) folder.
 
-Only the limiting logic of 100%-accuracy algorithms and other utility functions are unit-tested.
+Only the logic of 100%-accuracy algorithms and other utility functions are unit-tested.
 
 To run all the tests, make sure you are in the `tests` folder and have the poetry virtual environment activated with all 
 the necessary dependencies. Set the `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` environment variables and run:
 
 ```bash
-poetry run pytest
+poetry run pytest --import-mode importlib
 ```
+
+The reason we need to use the `importlib` mode is because there are multiple test files with the same name. See the 
+[pytest docs](https://docs.pytest.org/en/stable/explanation/pythonpath.html#import-modes) for more info.
+
+**Warning**: The current evaluation speed of the tests does not take the HTTP requests duration into account. 
+Because of that, if a request takes more than 2 seconds to complete, a test might fail.
+
 
 ## Releasing
 To create a new release, first use Poetry's [version](https://python-poetry.org/docs/cli/#version) command.
