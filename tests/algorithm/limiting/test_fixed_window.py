@@ -6,12 +6,12 @@ fixed_window = rate_limit.fixed_window(max_number_of_requests=1, window=3000, un
 
 
 @mark.asyncio
-async def test_below_max():
+async def test_below_max() -> None:
     assert (await fixed_window.limit("fixed_window_1"))["is_allowed"] is True
 
 
 @mark.asyncio
-async def test_above_max():
+async def test_above_max() -> None:
     await fixed_window.limit("fixed_window_2")
 
     assert (await fixed_window.limit("fixed_window_2"))["is_allowed"] is False
@@ -19,16 +19,18 @@ async def test_above_max():
 
 
 @mark.asyncio
-async def test_after_window():
+async def test_after_window() -> None:
     # Exhaust the request limit.
     await fixed_window.limit("fixed_window_3")
+
+    # Wait for the reset.
     sleep(3)
 
     assert (await fixed_window.limit("fixed_window_3"))["is_allowed"] is True
 
 
 @mark.asyncio
-async def test_with_non_ms_unit():
+async def test_with_non_ms_unit() -> None:
     fixed_window_with_seconds = rate_limit.fixed_window(
         max_number_of_requests=1, window=3, unit="s"
     )

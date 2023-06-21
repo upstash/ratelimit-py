@@ -25,8 +25,7 @@ class RateLimit:
         unit: Literal["ms", "s", "m", "h", "d"] = "ms",
     ) -> FixedWindow:
         """
-        The first request after a window has elapsed triggers the creation of a new one with the specified duration.
-        For each subsequent request, the algorithm checks whether the number of requests has exceeded the limit.
+        The time is divided into windows of fixed length and each window has a maximum number of allowed requests.
 
         :param max_number_of_requests: the number of requests allowed within the window
         :param window: the number of time units in which requests are limited

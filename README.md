@@ -17,6 +17,7 @@ The sdk is currently compatible with python 3.10 and above.
   - [Telemetry](#telemetry)
   - [Block until ready](#block-until-ready)
   - [Timeout](#timeout)
+  - [Rate-limiting outbound requests](#rate-limiting-outbound-requests)
 - [Ratelimiting algorithms](#ratelimiting-algorithms)
   - [Fixed Window](#fixed-window)
     - [Pros:](#pros)
@@ -118,12 +119,14 @@ For enforcing individual limits, use some kind of identifying variable (IP addre
 """
 identifier: str = "constant"
 
-request_result: RateLimitResponse = await fixed_window.limit(identifier)
 
-if not request_result["is_allowed"]:
-    print(f"{identifier} is rate-limited!")
-else:
-    print("Request passed!")
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.limit(identifier)
+
+    if not request_result["is_allowed"]:
+        return f"{identifier} is rate-limited!"
+    else:
+        return "Request passed!"
 ```
 
 You can also pass a `prefix` to the `RateLimit` constructor to distinguish between the keys used for rate limiting and others.
@@ -182,12 +185,14 @@ fixed_window = rate_limit.fixed_window(
 
 identifier: str = "constant"
 
-request_result: RateLimitResponse = await fixed_window.block_until_ready(identifier, timeout=2000)
 
-if not request_result["is_allowed"]:
-    print(f"The {identifier}'s request cannot be processed, even after 2 seconds.")
-else:
-    print("Request passed!")
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.block_until_ready(identifier, timeout=2000)
+
+    if not request_result["is_allowed"]:
+        return f"The {identifier}'s request cannot be processed, even after 2 seconds."
+    else:
+        return "Request passed!"
 ```
 
 
@@ -228,11 +233,42 @@ async def main() -> str:
 ```
 
 
+## Rate-limiting outbound requests
+It's also possible to limit the number of requests you're making to an external API.
+
+```python
+from upstash_ratelimit.limiter import RateLimit
+from upstash_ratelimit.schema.response import RateLimitResponse
+
+from upstash_redis.client import Redis
+
+rate_limit = RateLimit(Redis.from_env())
+
+fixed_window = rate_limit.fixed_window(
+    max_number_of_requests=1,
+    window=3,
+    unit="s"
+)
+
+identifier: str = "constant"  # Or, use an identifier to limit your requests to a certain endpoint.
+
+
+async def main() -> str:
+    request_result: RateLimitResponse = await fixed_window.limit(identifier)
+
+    if not request_result["is_allowed"]:
+        return f"{identifier} is rate-limited!"
+    else:
+        # Call the API
+        # ...
+        return "Request passed!"
+```
+
+
 # Ratelimiting algorithms
 
 ## Fixed Window
-This algorithm divides time into windows of fixed duration. The first request after a window has elapsed triggers the creation of a new one. 
-For each subsequent request, the algorithm checks whether the number of requests has exceeded the limit.
+The time is divided into windows of fixed length and each window has a maximum number of allowed requests.
 
 ### Pros
 - Very cheap in terms of data size and computation
@@ -334,14 +370,21 @@ They are also grouped in the [RateLimit](upstash_ratelimit/limiter.py) class for
 ## Running tests
 All tests live in the [test](./tests) folder.
 
-Only the limiting logic of 100%-accuracy algorithms and other utility functions are unit-tested.
+Only the logic of 100%-accuracy algorithms and other utility functions are unit-tested.
 
 To run all the tests, make sure you are in the `tests` folder and have the poetry virtual environment activated with all 
 the necessary dependencies. Set the `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` environment variables and run:
 
 ```bash
-poetry run pytest
+poetry run pytest --import-mode importlib
 ```
+
+The reason we need to use the `importlib` mode is because there are multiple test files with the same name. See the 
+[pytest docs](https://docs.pytest.org/en/stable/explanation/pythonpath.html#import-modes) for more info.
+
+**Warning**: The current evaluation speed of the tests does not take the HTTP requests duration into account. 
+Because of that, if a request takes more than 2 seconds to complete, a test might fail.
+
 
 ## Releasing
 To create a new release, first use Poetry's [version](https://python-poetry.org/docs/cli/#version) command.
