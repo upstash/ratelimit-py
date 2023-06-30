@@ -1,2 +1,2 @@
 Flask
-upstash-ratelimit-a
+upstash-ratelimit

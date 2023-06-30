@@ -1,7 +1,7 @@
 from upstash_ratelimit.algorithm import FixedWindow, SlidingWindow, TokenBucket
 from upstash_ratelimit.config import PREFIX
 from upstash_redis.asyncio import Redis
-from typing import Literal
+from typing import Literal, Optional
 
 
 class RateLimit:
@@ -9,14 +9,20 @@ class RateLimit:
     A class that incorporates all the algorithms to provide a smoother initialisation experience.
     """
 
-    def __init__(self, redis: Redis, prefix: str = PREFIX):
+    def __init__(self, redis: Optional[Redis] = None, prefix: str = PREFIX):
         """
-        :param redis: the Redis client that will be used to execute the algorithm's commands
+        :param redis: the Redis client that will be used to execute the algorithm's commands. If not given, will read from env variables `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
         :param prefix: a prefix to distinguish between the keys used for rate limiting and others
         """
 
+        if redis is None:
+            redis = Redis.from_env()
+
         self.redis = redis
         self.prefix = prefix
+
+        if redis.allow_telemetry:
+            self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
     def fixed_window(
         self,

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar, Literal, cast
 from upstash_redis.asyncio import Redis
+from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.utils.time import to_milliseconds
 from upstash_ratelimit.config import SDK, PREFIX
 from upstash_ratelimit.schema.response import RateLimitResponse
@@ -13,15 +14,19 @@ class RateLimitAlgorithm(ABC):
     @abstractmethod
     def __init__(self, redis: Redis, prefix: str = PREFIX):
         """
-        :param redis: the Redis client that will be used to execute the algorithm's commands
+        :param redis: the Redis client that will be used to execute the algorithm's commands. If not given, will read from env variables `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
         :param prefix: a prefix to distinguish between the keys used for rate limiting and others
         """
 
+        if redis is None:
+            redis = Redis.from_env()
+            
         self.redis = redis
         self.prefix = prefix
 
         if redis.allow_telemetry:
-            self.redis.telemetry_data = {"sdk": SDK}
+            self.redis.telemetry_data = TelemetryData(sdk=SDK)
+            
 
     @property
     @abstractmethod
