@@ -1,15 +1,14 @@
 
-from typing import ClassVar, Literal, cast
+from typing import Literal
 from upstash_redis import Redis
 from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.algorithms.token_bucket_core import TokenBucketCore
-from upstash_ratelimit.utils.time import to_milliseconds
+from upstash_ratelimit.sync.sync_blocker import SyncBlocker
 from upstash_ratelimit.config import PREFIX, SDK
 from upstash_ratelimit.schema.response import RateLimitResponse
-from math import floor
 
 
-class TokenBucket(TokenBucketCore):
+class TokenBucket(TokenBucketCore, SyncBlocker):
     """
     A bucket is filled with "max_number_of_tokens" that refill at "refill_rate" per "interval".
     Each request tries to consume one token and if the bucket is empty, the request is rejected.

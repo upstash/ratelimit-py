@@ -4,10 +4,11 @@ from upstash_redis.asyncio import Redis
 from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.algorithms.fixed_window_core import FixedWindowCore
 from upstash_ratelimit.config import SDK
+from upstash_ratelimit.asyncio.async_blocker import AsyncBlocker
 from upstash_ratelimit.schema.response import RateLimitResponse
 
 
-class FixedWindow(FixedWindowCore):
+class FixedWindow(FixedWindowCore, AsyncBlocker):
     """
     The time is divided into windows of fixed length and each window has a maximum number of allowed requests.
     """

@@ -3,6 +3,7 @@ from typing import ClassVar, Literal
 from upstash_redis.asyncio import Redis
 from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.algorithms.sliding_window_core import SlidingWindowCore
+from upstash_ratelimit.asyncio.async_blocker import AsyncBlocker
 from upstash_ratelimit.utils.time import to_milliseconds
 from upstash_ratelimit.config import PREFIX, SDK
 from upstash_ratelimit.schema.response import RateLimitResponse
@@ -10,7 +11,7 @@ from time import time_ns
 from math import floor
 
 
-class SlidingWindow(SlidingWindowCore):
+class SlidingWindow(SlidingWindowCore, AsyncBlocker):
     """
     Combined approach of sliding logs and fixed window with lower storage
     costs than sliding logs and improved boundary behavior by calculating a

@@ -1,15 +1,15 @@
 
 from distutils.sysconfig import PREFIX
-from math import floor
 from typing import Literal
 from upstash_redis import Redis
 from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.algorithms.fixed_window_core import FixedWindowCore
 from upstash_ratelimit.config import SDK
+from upstash_ratelimit.sync.sync_blocker import SyncBlocker
 from upstash_ratelimit.schema.response import RateLimitResponse
 
 
-class FixedWindow(FixedWindowCore):
+class FixedWindow(FixedWindowCore, SyncBlocker):
     """
     The time is divided into windows of fixed length and each window has a maximum number of allowed requests.
     """
