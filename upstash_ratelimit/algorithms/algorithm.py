@@ -7,6 +7,7 @@ from asyncio import sleep
 from time import time_ns
 
 
+# TODO might delete this
 class RateLimitAlgorithm(ABC):
     @abstractmethod
     def __init__(self, prefix: str = PREFIX):
