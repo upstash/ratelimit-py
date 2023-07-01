@@ -68,7 +68,7 @@ class FixedWindow(FixedWindowCore, AsyncBlocker):
         If the identifier is not rate-limited, the returned value will be -1.
         """
         async with self.redis:
-            exists = await self.redis.exists(self.find_key(identifier)) != 1 # The identifier hasn't made any request in the current window.
+            exists = await self.redis.exists(self.find_key(identifier)) # The identifier hasn't made any request in the current window.
 
         return super().reset(exists)
     
