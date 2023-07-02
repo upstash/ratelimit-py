@@ -1,4 +1,3 @@
-from upstash_ratelimit.asyncio import RateLimit
-from upstash_redis.asyncio import Redis
+from upstash_ratelimit import RateLimit
 
-rate_limit = RateLimit(Redis.from_env(allow_telemetry=False))
+rate_limit = RateLimit(prefix="sync")
