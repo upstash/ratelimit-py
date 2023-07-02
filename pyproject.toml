@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "upstash_ratelimit"
-version = "0.3.0"
-description = ""
-authors = ["Zgîmbău Tudor <tudor.zgimbau@gmail.com>"]
+version = "0.3.1"
+description = "Serverless ratelimiting package from Upstash"
+authors = ["Zgîmbău Tudor <tudor.zgimbau@gmail.com>", "Upstash <support@upstash.com>"]
 readme = "README.md"
 packages = [{include = "upstash_ratelimit"}]
 
