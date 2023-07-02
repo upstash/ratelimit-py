@@ -3,7 +3,7 @@ from pytest import mark
 from time import sleep
 
 token_bucket = rate_limit.token_bucket(
-    max_number_of_tokens=1, refill_rate=1, interval=3000, unit="ms"
+    max_number_of_tokens=1, refill_rate=1, interval=6000, unit="ms"
 )
 
 
@@ -15,6 +15,8 @@ async def test_before_the_first_request() -> None:
 @mark.asyncio
 async def test_after_the_first_request() -> None:
     await token_bucket.limit("async_token_bucket_remaining_2")
+
+    sleep(2)
 
     assert await token_bucket.remaining("async_token_bucket_remaining_2") == 0
 
