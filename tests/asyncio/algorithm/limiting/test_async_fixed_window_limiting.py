@@ -14,7 +14,7 @@ async def test_below_max() -> None:
 async def test_above_max() -> None:
     await fixed_window.limit("async_fixed_window_2")
 
-    await sleep(1)
+    await sleep(2)
     
     assert (await fixed_window.limit("async_fixed_window_2"))["is_allowed"] is False
     assert (await fixed_window.limit("async_fixed_window_2"))["is_allowed"] is False

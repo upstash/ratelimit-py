@@ -12,7 +12,7 @@ def test_below_max() -> None:
 def test_above_max() -> None:
     fixed_window.limit("fixed_window_2")
 
-    sleep(1)
+    sleep(2)
     
     assert (fixed_window.limit("fixed_window_2"))["is_allowed"] is False
     assert (fixed_window.limit("fixed_window_2"))["is_allowed"] is False
