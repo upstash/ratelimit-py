@@ -10,7 +10,7 @@ packages = [{include = "upstash_ratelimit"}]
 python = "^3.8"
 pytest = "^7.3.0"
 pytest-asyncio = "^0.21.0"
-upstash-redis = "^0.13.1"
+upstash-redis = "^0.13.2"
 
 [build-system]
 requires = ["poetry-core"]
