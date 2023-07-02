@@ -23,7 +23,7 @@ jobs:
 
       - name: Build and publish
         run: |
-          poetry config pypi-token.pypi ${{secrets.PYPI_TOKEN}}
+          poetry config pypi-token.pypi "${{secrets.PYPI_TOKEN}}"
           poetry build
           poetry publish --no-interaction
 
