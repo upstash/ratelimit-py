@@ -8,9 +8,9 @@ fixed_window = rate_limit.fixed_window(max_number_of_requests=1, window=3000, un
 @mark.asyncio
 async def test_before_timeout() -> None:
     # Exhaust the request limit.
-    await fixed_window.limit("timeout_1")
+    await fixed_window.limit("async_timeout_1")
 
-    assert (await fixed_window.block_until_ready("timeout_1", 4000))[
+    assert (await fixed_window.block_until_ready("async_timeout_1", 4000))[
         "is_allowed"
     ] is True
 
@@ -18,9 +18,9 @@ async def test_before_timeout() -> None:
 @mark.asyncio
 async def test_after_timeout() -> None:
     # Exhaust the request limit.
-    await fixed_window.limit("timeout_2")
+    await fixed_window.limit("async_timeout_2")
 
-    assert (await fixed_window.block_until_ready("timeout_2", 2000))[
+    assert (await fixed_window.block_until_ready("async_timeout_2", 2000))[
         "is_allowed"
     ] is False
 
@@ -28,6 +28,6 @@ async def test_after_timeout() -> None:
 @mark.asyncio
 async def test_with_negative_timeout() -> None:
     with raises(Exception) as exception:
-        await fixed_window.block_until_ready("timeout_3", -2)
+        await fixed_window.block_until_ready("async_timeout_3", -2)
 
     assert str(exception.value) == "Timeout must be greater than 0."

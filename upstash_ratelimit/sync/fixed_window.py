@@ -66,7 +66,7 @@ class FixedWindow(FixedWindowCore, SyncBlocker):
 
         If the identifier is not rate-limited, the returned value will be -1.
         """
-        exists = self.redis.exists(self.find_key(identifier)) != 1 # The identifier hasn't made any request in the current window.
+        exists = self.redis.exists(self.find_key(identifier)) == 1 # The identifier hasn't made any request in the current window.
 
         return super().reset(exists)
     
