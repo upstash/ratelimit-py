@@ -1,4 +1,4 @@
-from tests.client import rate_limit
+from tests.asyncio.client import rate_limit
 from pytest import mark
 from time import sleep
 
@@ -122,21 +122,3 @@ async def test_multiple_refills() -> None:
     ] is False
 
 
-@mark.asyncio
-async def test_multiple_refills() -> None:
-    # Exhaust the request limit.
-    await burst_token_bucket.limit("burst_token_bucket_3")
-    await burst_token_bucket.limit("burst_token_bucket_3")
-
-    # Wait for 2 refills.
-    sleep(4)
-
-    assert (await burst_token_bucket.limit("burst_token_bucket_3"))[
-        "is_allowed"
-    ] is True
-    assert (await burst_token_bucket.limit("burst_token_bucket_3"))[
-        "is_allowed"
-    ] is True
-    assert (await burst_token_bucket.limit("burst_token_bucket_3"))[
-        "is_allowed"
-    ] is False

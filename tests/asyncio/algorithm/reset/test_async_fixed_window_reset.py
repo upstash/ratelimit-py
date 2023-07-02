@@ -1,4 +1,4 @@
-from tests.client import rate_limit
+from tests.asyncio.client import rate_limit
 from pytest import mark
 from time import time_ns
 from math import floor

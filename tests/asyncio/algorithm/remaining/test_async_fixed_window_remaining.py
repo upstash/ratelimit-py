@@ -1,4 +1,4 @@
-from tests.client import rate_limit
+from tests.asyncio.client import rate_limit
 from pytest import mark
 
 fixed_window = rate_limit.fixed_window(max_number_of_requests=1, window=3000, unit="ms")

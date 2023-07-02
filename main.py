@@ -12,14 +12,13 @@ async def main():
     res = await afixed_window.block_until_ready('timeout_1', 10)
     print(f"res: {res}")
 
-def lambda_handler(event, context):
-    asyncio.run(main())
-    
-    rate_limit = RateLimit(prefix="test")
-
-    fixed_window = rate_limit.fixed_window(max_number_of_requests=2, window=5, unit="s")
-
-    res = fixed_window.block_until_ready('timeout_sync', 10)
-    print(f"sync res: {res}")
 
 
+asyncio.run(main())
+
+rate_limit = RateLimit(prefix="test")
+
+fixed_window = rate_limit.fixed_window(max_number_of_requests=2, window=5, unit="s")
+
+res = fixed_window.block_until_ready('timeout_sync', 10)
+print(f"sync res: {res}")

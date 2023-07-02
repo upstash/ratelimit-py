@@ -1,12 +1,12 @@
 from upstash_ratelimit.config import PREFIX
-from upstash_redis import Redis
+from upstash_redis.asyncio import Redis
 from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.config import SDK, PREFIX
 from typing import Literal, Optional
+from upstash_ratelimit.asyncio.fixed_window import FixedWindow
+from upstash_ratelimit.asyncio.sliding_window import SlidingWindow
+from upstash_ratelimit.asyncio.token_bucket import TokenBucket
 
-from upstash_ratelimit.sync.fixed_window import FixedWindow
-from upstash_ratelimit.sync.sliding_window import SlidingWindow
-from upstash_ratelimit.sync.token_bucket import TokenBucket
 
 
 class RateLimit:
