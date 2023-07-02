@@ -559,13 +559,13 @@ files = [
 
 [[package]]
 name = "upstash-redis"
-version = "0.13.0"
-description = ""
+version = "0.13.1"
+description = "Serverless Redis Sdk from Upstash"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "upstash_redis-0.13.0-py3-none-any.whl", hash = "sha256:f763d58b26f7c37d4e09add46e5f8219439521a5b96caa9c713908e706dcdb1c"},
-    {file = "upstash_redis-0.13.0.tar.gz", hash = "sha256:dddbd882f2d4eaf179f8f75d54b1f02e5e4668386d424ce42b3a8206c21a4027"},
+    {file = "upstash_redis-0.13.1-py3-none-any.whl", hash = "sha256:2ed1e7b7a804be42231291ebe6a50c91599114be05624178ac90ee05d8946db5"},
+    {file = "upstash_redis-0.13.1.tar.gz", hash = "sha256:8a27a74bfe4ae6c763e5f3cd927435d6163565ec8fb25635afe66aef26590854"},
 ]
 
 [package.dependencies]
@@ -681,4 +681,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "c0839505faab0ce031b1191f5b05ecbfcd0dca19012f0da3e5eecf60cbb449ed"
+content-hash = "fff1020cb3fe64199ff4a2d290297a8c6984aec3d12f9b1e0dcce85c3b0abb8a"
