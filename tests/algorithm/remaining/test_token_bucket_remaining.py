@@ -12,6 +12,8 @@ def test_before_the_first_request() -> None:
 def test_after_the_first_request() -> None:
     token_bucket.limit("token_bucket_remaining_2")
 
+    sleep(2)
+
     assert token_bucket.remaining("token_bucket_remaining_2") == 0
 
 
