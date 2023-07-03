@@ -2,7 +2,9 @@ from asyncio import sleep
 from tests.asyncio.client import rate_limit
 from pytest import mark
 
-fixed_window = rate_limit.fixed_window(max_number_of_requests=1, window=10000, unit="ms")
+fixed_window = rate_limit.fixed_window(
+    max_number_of_requests=1, window=10000, unit="ms"
+)
 
 
 @mark.asyncio
@@ -15,7 +17,7 @@ async def test_above_max() -> None:
     await fixed_window.limit("async_fixed_window_2")
 
     await sleep(2)
-    
+
     assert (await fixed_window.limit("async_fixed_window_2"))["is_allowed"] is False
     assert (await fixed_window.limit("async_fixed_window_2"))["is_allowed"] is False
 

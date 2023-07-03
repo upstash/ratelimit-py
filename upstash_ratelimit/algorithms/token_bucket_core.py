@@ -1,4 +1,3 @@
-
 from typing import ClassVar, Literal, cast
 from upstash_ratelimit.algorithms.algorithm import RateLimitAlgorithm
 from upstash_ratelimit.utils.time import to_milliseconds
@@ -139,5 +138,6 @@ class TokenBucketCore(RateLimitAlgorithm):
         last_refill: int = float_updated_at + number_of_refills * self.interval
 
         return last_refill + self.interval
+
 
 # TODO: super()__init__(prefix) is useless.

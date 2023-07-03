@@ -120,5 +120,3 @@ async def test_multiple_refills() -> None:
     assert (await burst_token_bucket.limit("async_burst_token_bucket_3"))[
         "is_allowed"
     ] is False
-
-

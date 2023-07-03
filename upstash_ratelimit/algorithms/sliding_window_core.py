@@ -1,4 +1,3 @@
-
 from typing import ClassVar, Literal
 from upstash_ratelimit.algorithms.algorithm import RateLimitAlgorithm
 from upstash_ratelimit.utils.time import to_milliseconds
@@ -103,7 +102,9 @@ class SlidingWindowCore(RateLimitAlgorithm):
             + self.window,
         }
 
-    def remaining(self, stored_requests_in_current_window, stored_requests_in_previous_window) -> int:
+    def remaining(
+        self, stored_requests_in_current_window, stored_requests_in_previous_window
+    ) -> int:
         """
         Determine the number of identifier's remaining requests.
         """

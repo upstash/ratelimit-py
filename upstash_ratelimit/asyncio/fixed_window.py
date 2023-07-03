@@ -38,7 +38,12 @@ class FixedWindow(FixedWindowCore, AsyncBlocker):
         if redis.allow_telemetry:
             self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
-        super().__init__(max_number_of_requests=max_number_of_requests, window=window, unit=unit, prefix=prefix)
+        super().__init__(
+            max_number_of_requests=max_number_of_requests,
+            window=window,
+            unit=unit,
+            prefix=prefix,
+        )
 
     async def limit(self, identifier: str) -> RateLimitResponse:
         """
@@ -47,7 +52,9 @@ class FixedWindow(FixedWindowCore, AsyncBlocker):
         """
         async with self.redis:
             current_requests = await self.redis.eval(
-                script=FixedWindowCore.script, keys=[self.find_key(identifier)], args=[self.window]
+                script=FixedWindowCore.script,
+                keys=[self.find_key(identifier)],
+                args=[self.window],
             )
 
         return super().limit(current_requests)
@@ -55,7 +62,7 @@ class FixedWindow(FixedWindowCore, AsyncBlocker):
     async def remaining(self, identifier: str) -> int:
         """
         Determine the number of identifier's remaining requests.
-        """        
+        """
         async with self.redis:
             current_requests = await self.redis.get(self.find_key(identifier))
 
@@ -68,11 +75,11 @@ class FixedWindow(FixedWindowCore, AsyncBlocker):
         If the identifier is not rate-limited, the returned value will be -1.
         """
         async with self.redis:
-            exists = await self.redis.exists(self.find_key(identifier)) # The identifier hasn't made any request in the current window.
+            exists = await self.redis.exists(
+                self.find_key(identifier)
+            )  # The identifier hasn't made any request in the current window.
 
         return super().reset(exists)
-    
+
     def find_key(self, identifier: str) -> str:
         return f"{self.prefix}:{identifier}:{self.current_window}"
-
-

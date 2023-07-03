@@ -1,4 +1,3 @@
-
 from typing import ClassVar, Literal
 from upstash_redis.asyncio import Redis
 from upstash_redis.schema.telemetry import TelemetryData
@@ -17,6 +16,7 @@ class SlidingWindow(SlidingWindowCore, AsyncBlocker):
     costs than sliding logs and improved boundary behavior by calculating a
     weighted score between two windows.
     """
+
     def __init__(
         self,
         redis: Redis,
@@ -42,7 +42,12 @@ class SlidingWindow(SlidingWindowCore, AsyncBlocker):
         if redis.allow_telemetry:
             self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
-        super().__init__(max_number_of_requests=max_number_of_requests, window=window, unit=unit, prefix=prefix)
+        super().__init__(
+            max_number_of_requests=max_number_of_requests,
+            window=window,
+            unit=unit,
+            prefix=prefix,
+        )
 
     async def limit(self, identifier: str) -> RateLimitResponse:
         """
@@ -55,7 +60,10 @@ class SlidingWindow(SlidingWindowCore, AsyncBlocker):
         async with self.redis:
             remaining_requests: int = await self.redis.eval(
                 script=SlidingWindowCore.script,
-                keys=[self.get_current_key(identifier), self.get_previous_key(identifier)],
+                keys=[
+                    self.get_current_key(identifier),
+                    self.get_previous_key(identifier),
+                ],
                 args=[
                     self.max_number_of_requests,
                     self.current_time_in_milliseconds,
@@ -70,10 +78,16 @@ class SlidingWindow(SlidingWindowCore, AsyncBlocker):
         Determine the number of identifier's remaining requests.
         """
         async with self.redis:
-            stored_requests_in_current_window = await self.redis.get(self.get_current_key(identifier))
-            stored_requests_in_previous_window = await self.redis.get(self.get_previous_key(identifier))
+            stored_requests_in_current_window = await self.redis.get(
+                self.get_current_key(identifier)
+            )
+            stored_requests_in_previous_window = await self.redis.get(
+                self.get_previous_key(identifier)
+            )
 
-        return super().remaining(stored_requests_in_current_window, stored_requests_in_previous_window)
+        return super().remaining(
+            stored_requests_in_current_window, stored_requests_in_previous_window
+        )
 
     async def reset(self, identifier: str) -> int:
         """
@@ -82,13 +96,14 @@ class SlidingWindow(SlidingWindowCore, AsyncBlocker):
         If the identifier is not rate-limited, the returned value will be -1.
         """
         async with self.redis:
-            exists = await self.redis.exists(self.get_previous_key(identifier), self.get_current_key(identifier))
+            exists = await self.redis.exists(
+                self.get_previous_key(identifier), self.get_current_key(identifier)
+            )
 
         return super().reset(exists)
-    
+
     def get_previous_key(self, identifier):
         return f"{self.prefix}:{identifier}:{self.previous_window}"
 
     def get_current_key(self, identifier):
         return f"{self.prefix}:{identifier}:{self.current_window}"
-

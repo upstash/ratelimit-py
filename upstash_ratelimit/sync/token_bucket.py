@@ -1,4 +1,3 @@
-
 from typing import Literal
 from upstash_redis import Redis
 from upstash_redis.schema.telemetry import TelemetryData
@@ -13,6 +12,7 @@ class TokenBucket(TokenBucketCore, SyncBlocker):
     A bucket is filled with "max_number_of_tokens" that refill at "refill_rate" per "interval".
     Each request tries to consume one token and if the bucket is empty, the request is rejected.
     """
+
     def __init__(
         self,
         redis: Redis,
@@ -40,7 +40,13 @@ class TokenBucket(TokenBucketCore, SyncBlocker):
         if redis.allow_telemetry:
             self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
-        super().__init__(max_number_of_tokens=max_number_of_tokens, refill_rate=refill_rate, interval=interval, unit=unit, prefix=prefix)
+        super().__init__(
+            max_number_of_tokens=max_number_of_tokens,
+            refill_rate=refill_rate,
+            interval=interval,
+            unit=unit,
+            prefix=prefix,
+        )
 
     def limit(self, identifier: str) -> RateLimitResponse:
         """
@@ -58,7 +64,9 @@ class TokenBucket(TokenBucketCore, SyncBlocker):
             ],
         )
 
-        return super().limit(remaining_tokens=remaining_tokens, next_refill_at=next_refill_at)
+        return super().limit(
+            remaining_tokens=remaining_tokens, next_refill_at=next_refill_at
+        )
 
     def remaining(self, identifier: str) -> int:
         """
@@ -77,6 +85,6 @@ class TokenBucket(TokenBucketCore, SyncBlocker):
         updated_at = self.redis.hget(self.get_key(identifier), "updated_at")
 
         return super().reset(updated_at=updated_at)
-    
+
     def get_key(self, identifier):
         return f"{self.prefix}:{identifier}"
