@@ -1,4 +1,3 @@
-
 from typing import Literal
 from upstash_redis import Redis
 from upstash_redis.schema.telemetry import TelemetryData
@@ -14,6 +13,7 @@ class SlidingWindow(SlidingWindowCore, SyncBlocker):
     costs than sliding logs and improved boundary behavior by calculating a
     weighted score between two windows.
     """
+
     def __init__(
         self,
         redis: Redis,
@@ -39,7 +39,12 @@ class SlidingWindow(SlidingWindowCore, SyncBlocker):
         if redis.allow_telemetry:
             self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
-        super().__init__(max_number_of_requests=max_number_of_requests, window=window, unit=unit, prefix=prefix)
+        super().__init__(
+            max_number_of_requests=max_number_of_requests,
+            window=window,
+            unit=unit,
+            prefix=prefix,
+        )
 
     def limit(self, identifier: str) -> RateLimitResponse:
         """
@@ -65,11 +70,17 @@ class SlidingWindow(SlidingWindowCore, SyncBlocker):
         """
         Determine the number of identifier's remaining requests.
         """
-        stored_requests_in_current_window = self.redis.get(self.get_current_key(identifier))
+        stored_requests_in_current_window = self.redis.get(
+            self.get_current_key(identifier)
+        )
 
-        stored_requests_in_previous_window = self.redis.get(self.get_previous_key(identifier))
+        stored_requests_in_previous_window = self.redis.get(
+            self.get_previous_key(identifier)
+        )
 
-        return super().remaining(stored_requests_in_current_window, stored_requests_in_previous_window)
+        return super().remaining(
+            stored_requests_in_current_window, stored_requests_in_previous_window
+        )
 
     def reset(self, identifier: str) -> int:
         """
@@ -77,13 +88,14 @@ class SlidingWindow(SlidingWindowCore, SyncBlocker):
 
         If the identifier is not rate-limited, the returned value will be -1.
         """
-        exists = self.redis.exists(self.get_previous_key(identifier), self.get_current_key(identifier))
+        exists = self.redis.exists(
+            self.get_previous_key(identifier), self.get_current_key(identifier)
+        )
 
         return super().reset(exists)
-    
+
     def get_previous_key(self, identifier):
         return f"{self.prefix}:{identifier}:{self.previous_window}"
 
     def get_current_key(self, identifier):
         return f"{self.prefix}:{identifier}:{self.current_window}"
-

@@ -36,7 +36,9 @@ async def test_after_burst() -> None:
     # Wait for the refill.
     sleep(2)
 
-    assert await burst_token_bucket.remaining("async_burst_token_bucket_remaining_1") == 1
+    assert (
+        await burst_token_bucket.remaining("async_burst_token_bucket_remaining_1") == 1
+    )
 
 
 @mark.asyncio
@@ -49,4 +51,6 @@ async def test_after_burst_with_positive_number_of_tokens_before_the_refill() ->
     """
     sleep(2)
 
-    assert await burst_token_bucket.remaining("async_burst_token_bucket_remaining_2") == 2
+    assert (
+        await burst_token_bucket.remaining("async_burst_token_bucket_remaining_2") == 2
+    )

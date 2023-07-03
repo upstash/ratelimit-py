@@ -1,4 +1,3 @@
-
 from typing import ClassVar, Literal
 from upstash_ratelimit.algorithms.algorithm import RateLimitAlgorithm
 from upstash_ratelimit.utils.time import to_milliseconds

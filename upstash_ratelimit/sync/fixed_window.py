@@ -1,4 +1,3 @@
-
 from distutils.sysconfig import PREFIX
 from typing import Literal
 from upstash_redis import Redis
@@ -39,7 +38,12 @@ class FixedWindow(FixedWindowCore, SyncBlocker):
         if redis.allow_telemetry:
             self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
-        super().__init__(max_number_of_requests=max_number_of_requests, window=window, unit=unit, prefix=prefix)
+        super().__init__(
+            max_number_of_requests=max_number_of_requests,
+            window=window,
+            unit=unit,
+            prefix=prefix,
+        )
 
     def limit(self, identifier: str) -> RateLimitResponse:
         """
@@ -47,7 +51,9 @@ class FixedWindow(FixedWindowCore, SyncBlocker):
         and return additional metadata.
         """
         current_requests = self.redis.eval(
-            script=FixedWindowCore.script, keys=[self.find_key(identifier)], args=[self.window]
+            script=FixedWindowCore.script,
+            keys=[self.find_key(identifier)],
+            args=[self.window],
         )
 
         return super().limit(current_requests)
@@ -55,7 +61,7 @@ class FixedWindow(FixedWindowCore, SyncBlocker):
     def remaining(self, identifier: str) -> int:
         """
         Determine the number of identifier's remaining requests.
-        """        
+        """
         current_requests = self.redis.get(self.find_key(identifier))
 
         return super().remaining(current_requests)
@@ -66,11 +72,11 @@ class FixedWindow(FixedWindowCore, SyncBlocker):
 
         If the identifier is not rate-limited, the returned value will be -1.
         """
-        exists = self.redis.exists(self.find_key(identifier)) == 1 # The identifier hasn't made any request in the current window.
+        exists = (
+            self.redis.exists(self.find_key(identifier)) == 1
+        )  # The identifier hasn't made any request in the current window.
 
         return super().reset(exists)
-    
+
     def find_key(self, identifier: str) -> str:
         return f"{self.prefix}:{identifier}:{self.current_window}"
-
-

@@ -17,7 +17,6 @@ class RateLimitAlgorithm(ABC):
         """
 
         self.prefix = prefix
-            
 
     @property
     @abstractmethod
@@ -54,6 +53,3 @@ class RateLimitAlgorithm(ABC):
     @property
     def current_time_in_milliseconds(self) -> float:
         return time_ns() / 1000000
-
-
-

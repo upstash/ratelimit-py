@@ -8,7 +8,6 @@ from upstash_ratelimit.asyncio.sliding_window import SlidingWindow
 from upstash_ratelimit.asyncio.token_bucket import TokenBucket
 
 
-
 class RateLimit:
     """
     A class that incorporates all the algorithms to provide a smoother initialisation experience.
