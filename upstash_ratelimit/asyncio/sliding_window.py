@@ -1,6 +1,5 @@
 from typing import ClassVar, Literal
 from upstash_redis.asyncio import Redis
-from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.algorithms.sliding_window_core import SlidingWindowCore
 from upstash_ratelimit.asyncio.async_blocker import AsyncBlocker
 from upstash_ratelimit.utils.time import to_milliseconds
@@ -37,10 +36,8 @@ class SlidingWindow(SlidingWindowCore, AsyncBlocker):
         if redis is None:
             redis = Redis.from_env()
 
+        redis._headers["Upstash-Telemetry-Sdk"] = "upstash_ratelimit@python"
         self.redis = redis
-
-        if redis.allow_telemetry:
-            self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
         super().__init__(
             max_number_of_requests=max_number_of_requests,

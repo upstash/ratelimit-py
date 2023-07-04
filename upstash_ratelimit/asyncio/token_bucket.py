@@ -1,6 +1,5 @@
 from typing import Literal
 from upstash_redis.asyncio import Redis
-from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.algorithms.token_bucket_core import TokenBucketCore
 from upstash_ratelimit.asyncio.async_blocker import AsyncBlocker
 from upstash_ratelimit.config import PREFIX, SDK
@@ -36,10 +35,8 @@ class TokenBucket(TokenBucketCore, AsyncBlocker):
         if redis is None:
             redis = Redis.from_env()
 
+        redis._headers["Upstash-Telemetry-Sdk"] = "upstash_ratelimit@python"
         self.redis = redis
-
-        if redis.allow_telemetry:
-            self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
         super().__init__(
             max_number_of_tokens=max_number_of_tokens,
