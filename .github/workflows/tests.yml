@@ -22,7 +22,9 @@ jobs:
         run: curl -sSL https://install.python-poetry.org | python3 -
 
       - name: Set up Poetry environment
-        run: poetry install --no-root
+        run: |
+          poetry cache clear PyPI --all
+          poetry install --no-root
 
       - name: Run tests
         run: |
