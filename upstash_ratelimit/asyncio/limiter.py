@@ -1,6 +1,5 @@
 from upstash_ratelimit.config import PREFIX
 from upstash_redis.asyncio import Redis
-from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.config import SDK, PREFIX
 from typing import Literal, Optional
 from upstash_ratelimit.asyncio.fixed_window import FixedWindow
@@ -22,11 +21,9 @@ class RateLimit:
         if redis is None:
             redis = Redis.from_env()
 
+        redis._headers["Upstash-Telemetry-Sdk"] = "upstash_ratelimit@python"
         self.redis = redis
         self.prefix = prefix
-
-        if redis.allow_telemetry:
-            self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
     def fixed_window(
         self,

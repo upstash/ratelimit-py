@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from upstash_redis.asyncio import Redis
-from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.config import SDK, PREFIX
 from upstash_ratelimit.schema.response import RateLimitResponse
 from asyncio import sleep

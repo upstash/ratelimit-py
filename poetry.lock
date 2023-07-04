@@ -259,13 +259,13 @@ files = [
 
 [[package]]
 name = "exceptiongroup"
-version = "1.1.1"
+version = "1.1.2"
 description = "Backport of PEP 654 (exception groups)"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "exceptiongroup-1.1.1-py3-none-any.whl", hash = "sha256:232c37c63e4f682982c8b6459f33a8981039e5fb8756b2074364e5055c498c9e"},
-    {file = "exceptiongroup-1.1.1.tar.gz", hash = "sha256:d484c3090ba2889ae2928419117447a14daf3c1231d5e30d0aae34f354f01785"},
+    {file = "exceptiongroup-1.1.2-py3-none-any.whl", hash = "sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f"},
+    {file = "exceptiongroup-1.1.2.tar.gz", hash = "sha256:12c3e887d6485d16943a309616de20ae5582633e0a2eda17f4e10fd61c1e8af5"},
 ]
 
 [package.extras]
@@ -559,13 +559,13 @@ files = [
 
 [[package]]
 name = "upstash-redis"
-version = "0.14.4"
+version = "0.14.5"
 description = "Serverless Redis Sdk from Upstash"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "upstash_redis-0.14.4-py3-none-any.whl", hash = "sha256:1bbe047c3436b77477c80d2f1c2e64253a5a019dcfe22b80f6abd10c91a3210a"},
-    {file = "upstash_redis-0.14.4.tar.gz", hash = "sha256:43221791f7db505292ce6eabddd6f984b861e2cd78a189abadfa54ebe5a9ee51"},
+    {file = "upstash_redis-0.14.5-py3-none-any.whl", hash = "sha256:7f6d30fe490f6d960d594cc4fc9220d6855e8f91c53d4a1b6f7c9092b0f4cfe8"},
+    {file = "upstash_redis-0.14.5.tar.gz", hash = "sha256:f27de1ea239516e411b65778085009e0dc6ec7adb4a7268840021d1e87072e67"},
 ]
 
 [package.dependencies]
@@ -681,4 +681,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "515f01376d9bf95bd602799e62e559d4c63823b4f7dff3a0453c4711c63ed274"
+content-hash = "85c4059297d370915860ead55191aae9230f189fb13d6fda44b5064f6494d0a8"

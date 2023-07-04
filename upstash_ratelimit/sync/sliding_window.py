@@ -1,6 +1,5 @@
 from typing import Literal
 from upstash_redis import Redis
-from upstash_redis.schema.telemetry import TelemetryData
 from upstash_ratelimit.algorithms.sliding_window_core import SlidingWindowCore
 from upstash_ratelimit.config import PREFIX, SDK
 from upstash_ratelimit.schema.response import RateLimitResponse
@@ -34,10 +33,8 @@ class SlidingWindow(SlidingWindowCore, SyncBlocker):
         if redis is None:
             redis = Redis.from_env()
 
+        redis._headers["Upstash-Telemetry-Sdk"] = "upstash_ratelimit@python"
         self.redis = redis
-
-        if redis.allow_telemetry:
-            self.redis.telemetry_data = TelemetryData(sdk=SDK)
 
         super().__init__(
             max_number_of_requests=max_number_of_requests,
