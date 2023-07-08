@@ -1,3 +1,12 @@
-from upstash_ratelimit.limiter import RateLimit
+__version__ = "0.4.2"
 
-__all__ = ["RateLimit"]
+from upstash_ratelimit.limiter import FixedWindow, Response, SlidingWindow, TokenBucket
+from upstash_ratelimit.ratelimit import Ratelimit
+
+__all__ = [
+    "Ratelimit",
+    "FixedWindow",
+    "SlidingWindow",
+    "TokenBucket",
+    "Response",
+]
