@@ -200,7 +200,7 @@ class FixedWindow(AbstractLimiter):
         self._max_requests = max_requests
         self._window = to_ms(window, unit)
 
-    def _limit(self, identifier: str) -> Generator[Any, int, Any]:
+    def _limit(self, identifier: str) -> Generator:
         curr_window = now_ms() // self._window
         key = f"{identifier}:{curr_window}"
 
@@ -216,7 +216,7 @@ class FixedWindow(AbstractLimiter):
             reset=ms_to_s((curr_window + 1) * self._window),
         )
 
-    def _get_remaining(self, identifier: str) -> Generator[Any, Union[str, None], Any]:
+    def _get_remaining(self, identifier: str) -> Generator:
         curr_window = now_ms() // self._window
         key = f"{identifier}:{curr_window}"
 
@@ -295,7 +295,7 @@ class SlidingWindow(AbstractLimiter):
         self._max_requests = max_requests
         self._window = to_ms(window, unit)
 
-    def _limit(self, identifier: str) -> Generator[Any, int, Any]:
+    def _limit(self, identifier: str) -> Generator:
         now = now_ms()
 
         curr_window = now // self._window
@@ -320,9 +320,7 @@ class SlidingWindow(AbstractLimiter):
             reset=ms_to_s((curr_window + 1) * self._window),
         )
 
-    def _get_remaining(
-        self, identifier: str
-    ) -> Generator[Any, Tuple[Union[str, None], Union[str, None]], Any]:
+    def _get_remaining(self, identifier: str) -> Generator:
         now = now_ms()
 
         window = now // self._window
@@ -424,7 +422,7 @@ class TokenBucket(AbstractLimiter):
         self._refill_rate = refill_rate
         self._interval = to_ms(interval, unit)
 
-    def _limit(self, identifier: str) -> Generator[Any, Tuple[int, int], Any]:
+    def _limit(self, identifier: str) -> Generator:
         remaining, refill_at = yield (
             "eval",
             (
@@ -441,9 +439,7 @@ class TokenBucket(AbstractLimiter):
             reset=ms_to_s(refill_at),
         )
 
-    def _get_remaining(
-        self, identifier: str
-    ) -> Generator[Any, Tuple[Union[int, None], Union[int, None]], Any]:
+    def _get_remaining(self, identifier: str) -> Generator:
         now = now_ms()
 
         refilled_at_, tokens_ = yield (
@@ -463,7 +459,7 @@ class TokenBucket(AbstractLimiter):
 
         yield tokens
 
-    def _get_reset(self, identifier: str) -> Generator[Any, Union[str, None], Any]:
+    def _get_reset(self, identifier: str) -> Generator:
         now = now_ms()
 
         refilled_at_ = yield (
