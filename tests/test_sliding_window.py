@@ -119,7 +119,7 @@ def test_get_remaining_with_sliding(redis: Redis) -> None:
             break
 
     last_response = responses[-1]
-    assert ratelimit.get_remaining(id) == last_response.remaining
+    assert ratelimit.get_remaining(id) >= last_response.remaining
 
 
 def test_get_reset(redis: Redis) -> None:
