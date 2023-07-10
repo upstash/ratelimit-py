@@ -1,21 +1,28 @@
-from flask import Flask
-from upstash_ratelimit.limiter import RateLimit
-from upstash_redis.asyncio import Redis
-import asyncio
+from http.server import BaseHTTPRequestHandler
 
-rate_limit = RateLimit()
-fixed_window = rate_limit.fixed_window(max_number_of_requests=2, window=4, unit="s")
+from upstash_redis import Redis
 
-app = Flask(__name__)
+from upstash_ratelimit import FixedWindow, Ratelimit
 
-
-@app.route("/")
-def home():
-    return "Hello, World!"
+ratelimit = Ratelimit(
+    redis=Redis.from_env(allow_telemetry=False),
+    limiter=FixedWindow(max_requests=5, window=5),
+)
 
 
-@app.route("/request")
-def request():
-    asyncio.run(fixed_window.limit("timeout_1"))
-    res = asyncio.run(fixed_window.block_until_ready("timeout_1", 10))
-    return f"<p>{res}</p>"
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        response = ratelimit.limit("global")
+        self.send_header("Content-type", "text/plain")
+        self.send_header("X-Ratelimit-Limit", response.limit)
+        self.send_header("X-Ratelimit-Remaining", response.remaining)
+        self.send_header("X-Ratelimit-Reset", response.reset)
+
+        self.end_headers()
+        if not response.allowed:
+            self.send_response(429)
+            self.wfile.write("Come back later!".encode("utf-8"))
+        else:
+            self.send_response(200)
+            self.wfile.write("Hello!".encode("utf-8"))
+

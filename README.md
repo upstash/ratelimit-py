@@ -1,24 +1,21 @@
-# Upstash Rate Limit - python edition
+# Upstash Ratelimit Python SDK
 
-upstash-ratelimit is a connectionless rate limiting library for python, designed to be used in serverless environments such as:
+upstash-ratelimit is a connectionless rate limiting library for Python, designed to be used in serverless environments such as:
 - AWS Lambda
 - Vercel Serverless
 - Google Cloud Functions
 - and other environments where HTTP is preferred over TCP.
 
-The sdk is currently compatible with python 3.10 and above.
+The SDK is currently compatible with Python 3.8 and above.
 
 <!-- toc -->
-- [Upstash Rate Limit - python edition](#upstash-rate-limit---python-edition)
+- [Upstash Ratelimit Python SDK](#upstash-ratelimit-python-sdk)
 - [Quick Start](#quick-start)
   - [Install](#install)
-    - [PyPi](#pypi)
-  - [Setup database client](#setup-database-client)
-  - [Ratelimit](#ratelimit)
-    - [Importing Options](#importing-options)
-    - [Usage](#usage)
+  - [Create database](#create-database)
+  - [Usage](#usage)
   - [Block until ready](#block-until-ready)
-  - [Rate-limiting outbound requests](#rate-limiting-outbound-requests)
+  - [Using multiple limits](#using-multiple-limits)
 - [Ratelimiting algorithms](#ratelimiting-algorithms)
   - [Fixed Window](#fixed-window)
     - [Pros](#pros)
@@ -35,161 +32,145 @@ The sdk is currently compatible with python 3.10 and above.
 - [Contributing](#contributing)
   - [Preparing the environment](#preparing-the-environment)
   - [Running tests](#running-tests)
-
 <!-- tocstop -->
 
 # Quick Start
 
 ## Install
 
-### PyPi
-
 ```bash
 pip install upstash-ratelimit
 ```
 
-## Setup database client
-To be able to use upstash-ratelimit, you need to create a database on [Upstash](https://console.upstash.com/) and get `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` environment variables.
+## Create database
+To be able to use upstash-ratelimit, you need to create a database on [Upstash](https://console.upstash.com/).
 
-## Ratelimit
-### Importing Options
-- #### Directly from ratelimit: This method will use your `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` variables that you set as env variables. 
+## Usage
 
-    ```python
-    # for sync client
-    from upstash_ratelimit import RateLimit
-    ratelimit = RateLimit()
+For possible Redis client configurations, have a look at the [Redis SDK repository](https://github.com/upstash/redis-python).
 
-    # for async client
-    from upstash_ratelimit.asyncio import RateLimit
-    ratelimit = Ratelimit()
-    ```
-
-- #### Explicit Redis Client: This method will use the Redis client that you manually initiate.
-    ```python
-    # for snyc client
-    from upstash_ratelimit import RateLimit
-    from upstash_redis import Redis
-
-    rate_limit = RateLimit(Redis(url="UPSTASH_REDIS_REST_URL", token="UPSTASH_REDIS_REST_TOKEN"))
-
-
-    # for asnyc client
-    from upstash_ratelimit.asyncio import RateLimit
-    from upstash_redis.asyncio import Redis
-
-    rate_limit = RateLimit(Redis(url="UPSTASH_REDIS_REST_URL", token="UPSTASH_REDIS_REST_TOKEN"))
-    ```
-    For possible Redis client configurations, have a look at the [redis sdk repository](https://github.com/upstash/redis-python/blob/main/upstash_redis/client.py).
-
-- You can also pass a `prefix` to the `RateLimit` constructor to distinguish between the keys used for rate limiting and others.
-It defaults to `"ratelimit"`
-    ```python
-    ratelimit = Ratelimit(prefix="app1_ratelimiter")
-    ```
-    
-### Usage
-
-
-**All of the examples below can be implemented in async context as well. Only adding the correct import with async client, and necessary `await` expressions are sufficient for async use.**
-
+> This library supports asyncio as well. To use it, import the asyncio-based
+  variant from the `upstash_ratelimit.asyncio` module.
 
 ```python
-# Chose one algorithm.
-fixed_window = rate_limit.fixed_window(
-    max_number_of_requests=1,
-    window=3,
-    unit="s"
+from upstash_ratelimit import Ratelimit, FixedWindow
+from upstash_redis import Redis
+
+# Create a new ratelimiter, that allows 10 requests per 10 seconds
+ratelimit = Ratelimit(
+    redis=Redis.from_env(),
+    limiter=FixedWindow(max_requests=10, window=10),
+    # Optional prefix for the keys used in Redis. This is useful
+    # if you want to share a Redis instance with other applications
+    # and want to avoid key collisions. The default prefix is
+    # "upstash-ratelimit"
+    prefix="upstash-ratelimit",
 )
 
-"""
-Use a constant to limit all the requests together.
-For enforcing individual limits, use some kind of identifying variable (IP address, API key, etc.).
-"""
-identifier: str = "constant"
+# Use a constant string to limit all requests with a single ratelimit
+# Or use a user ID, API key or IP address for individual limits.
+identifier = "api"
+response = ratelimit.limit(identifier)
 
-def main():
-    request_result = fixed_window.limit(identifier)
+if not response.allowed:
+    print("Unable to process at this time")
+else:
+    do_expensive_calculation()
+    print("Here you go!")
 
-    if not request_result["is_allowed"]:
-        return f"{identifier} is rate-limited!"
-    else:
-        return "Request passed!"
 ```
 
-The `limit` method also returns the following metadata :
+The `limit` method also returns the following metadata:
+
 
 ```python
-class RateLimitResponse(TypedDict):
+@dataclasses.dataclass
+class Response:
+    allowed: bool
     """
-    The response given by the rate-limiting methods, with additional metadata.
+    Whether the request may pass(`True`) or exceeded the limit(`False`)
     """
-    is_allowed: bool
 
-    # The maximum number of requests allowed within a window.
     limit: int
+    """
+    Maximum number of requests allowed within a window.
+    """
 
-    # How many requests can still be made within the window. If negative, it means the limit has been exceeded.
     remaining: int
+    """
+    How many requests the user has left within the current window.
+    """
 
-    # The unix time in milliseconds when the next window begins.
-    reset: int
+    reset: float
+    """
+    Unix timestamp in seconds when the limits are reset
+    """
 ```
-
 
 ## Block until ready
+
 You also have the option to try and wait for a request to pass in the given timeout.
-If the first request is blocked and the timeout exceeds the time needed for the next interval to come,
-we wait and retry once that happens.
+
+It is very similar to the `limit` method and takes an identifier and returns the same 
+response. However if the current limit has already been exceeded, it will automatically 
+wait until the next window starts and will try again. Setting the timeout parameter (in seconds) will cause the method to block a finite amount of time.
 
 ```python
-fixed_window = rate_limit.fixed_window(
-    max_number_of_requests=1,
-    window=3,
-    unit="s"
+from upstash_ratelimit import Ratelimit, SlidingWindow
+from upstash_redis import Redis
+
+# Create a new ratelimiter, that allows 10 requests per 10 seconds
+ratelimit = Ratelimit(
+    redis=Redis.from_env(),
+    limiter=SlidingWindow(max_requests=10, window=10),
 )
 
-identifier: str = "constant"
+response = ratelimit.block_until_ready("id", timeout=30)
 
-def main() -> str:
-    request_result = fixed_window.block_until_ready(identifier, timeout=2000)
-
-    if not request_result["is_allowed"]:
-        return f"The {identifier}'s request cannot be processed, even after 2 seconds."
-    else:
-        return "Request passed!"
+if not response.allowed:
+    print("Unable to process, even after 30 seconds")
+else:
+    do_expensive_calculation()
+    print("Here you go!")
 ```
 
 
-## Rate-limiting outbound requests
-It's also possible to limit the number of requests you're making to an external API.
+## Using multiple limits
+Sometimes you might want to apply different limits to different users. For example you might want to allow 10 requests per 10 seconds for free users, but 60 requests per 10 seconds for paid users.
+
+Here's how you could do that:
 
 ```python
-fixed_window = rate_limit.fixed_window(
-    max_number_of_requests=1,
-    window=3,
-    unit="s"
-)
+from upstash_ratelimit import Ratelimit, SlidingWindow
+from upstash_redis import Redis
 
-identifier: str = "constant"  # Or, use an identifier to limit your requests to a certain endpoint.
+class MultiRL:
+    def __init__(self) -> None:
+        redis = Redis.from_env()
+        self.free = Ratelimit(
+            redis=redis,
+            limiter=SlidingWindow(max_requests=10, window=10),
+            prefix="ratelimit:free",
+        )
 
+        self.paid = Ratelimit(
+            redis=redis,
+            limiter=SlidingWindow(max_requests=60, window=10),
+            prefix="ratelimit:paid",
+        )
 
-def main() -> str:
-    request_result = fixed_window.limit(identifier)
+# Create a new ratelimiter, that allows 10 requests per 10 seconds
+ratelimit = MultiRL()
 
-    if not request_result["is_allowed"]:
-        return f"{identifier} is rate-limited!"
-    else:
-        # Call the API
-        # ...
-        return "Request passed!"
+ratelimit.free.limit("userIP")
+ratelimit.paid.limit("userIP")
 ```
-
 
 # Ratelimiting algorithms
 
 ## Fixed Window
-The time is divided into windows of fixed length and each window has a maximum number of allowed requests.
+
+This algorithm divides time into fixed durations/windows. For example each window is 10 seconds long. When a new request comes in, the current time is used to determine the window and a counter is increased. If the counter is larger than the set limit, the request is rejected.
 
 ### Pros
 - Very cheap in terms of data size and computation
@@ -197,24 +178,35 @@ The time is divided into windows of fixed length and each window has a maximum n
 
 ### Cons
 - Can cause high bursts at the window boundaries to leak through
+- Causes request stampedes if many users are trying to access your server, whenever a new window begins
 
 ### Usage
 
 ```python
-fixed_window = rate_limit.fixed_window(
-    max_number_of_requests=1,
-    window=3,
-    unit="s"
+from upstash_ratelimit import Ratelimit, FixedWindow
+from upstash_redis import Redis
+
+ratelimit = Ratelimit(
+    redis=Redis.from_env(),
+    limiter=FixedWindow(max_requests=10, window=10),
 )
 ```
 
-
 ## Sliding Window
-Combined approach of sliding window and sliding logs that calculates a weighted score between two windows
-to decide if a request should pass.
+
+Builds on top of fixed window but instead of a fixed window, we use a rolling window. Take this example: We have a rate limit of 10 requests per 1 minute. We divide time into 1 minute slices, just like in the fixed window algorithm. Window 1 will be from 00:00:00 to 00:01:00 (HH:MM:SS). Let's assume it is currently 00:01:15 and we have received 4 requests in the first window and 5 requests so far in the current window. The approximation to determine if the request should pass works like this:
+
+```python
+limit = 10
+
+# 4 request from the old window, weighted + requests in current window
+rate = 4 * ((60 - 15) / 60) + 5 = 8
+
+return rate < limit # True means we should allow the request
+```
 
 ### Pros
-- Approaches the issue near boundaries from fixed window.
+- Solves the issue near boundary from fixed window.
 
 ### Cons
 - More expensive in terms of storage and computation
@@ -223,20 +215,22 @@ to decide if a request should pass.
 ### Usage
 
 ```python
-sliding_window = rate_limit.sliding_window(
-    max_number_of_requests=1,
-    window=3,
-    unit="s"
+from upstash_ratelimit import Ratelimit, SlidingWindow
+from upstash_redis import Redis
+
+ratelimit = Ratelimit(
+    redis=Redis.from_env(),
+    limiter=SlidingWindow(max_requests=10, window=10),
 )
 ```
 
 ## Token Bucket
-A bucket is filled with "max_number_of_tokens" that refill at "refill_rate" per "interval".
-Each request tries to consume one token and if the bucket is empty, the request is rejected.
+
+Consider a bucket filled with maximum number of tokens that refills constantly at a rate per interval. Every request will remove one token from the bucket and if there is no token to take, the request is rejected.
 
 ### Pros
-- Bursts of requests are smoothed out, and you can process them at a constant rate
-- Allows setting a higher initial burst limit by setting maxTokens higher than refillRate
+- Bursts of requests are smoothed out and you can process them at a constant rate.
+- Allows setting a higher initial burst limit by setting maximum number of tokens higher than the refill rate
 
 ### Cons
 - Expensive in terms of computation
@@ -244,11 +238,12 @@ Each request tries to consume one token and if the bucket is empty, the request 
 ### Usage
 
 ```python
-token_bucket = rate_limit.token_bucket(
-    max_number_of_tokens=2,
-    refill_rate=1,
-    interval=3,
-    unit="s"
+from upstash_ratelimit import Ratelimit, TokenBucket
+from upstash_redis import Redis
+
+ratelimit = Ratelimit(
+    redis=Redis.from_env(),
+    limiter=TokenBucket(max_tokens=10, refill_rate=5, interval=10),
 )
 ```
 
