@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 from collections.abc import Generator
-from typing import Any, Callable, Tuple, Union
+from typing import Any, Callable
 
 from upstash_redis import Redis
 from upstash_redis.asyncio import Redis as AsyncRedis
@@ -55,7 +55,7 @@ class Limiter(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def get_reset_async(self, redis: Redis, identifier: str) -> float:
+    async def get_reset_async(self, redis: AsyncRedis, identifier: str) -> float:
         pass
 
 
@@ -145,7 +145,7 @@ class AbstractLimiter(Limiter):
         reset: float = _with_at_most_one_request(redis, self._get_reset(identifier))
         return reset
 
-    async def get_reset_async(self, redis: Redis, identifier: str) -> float:
+    async def get_reset_async(self, redis: AsyncRedis, identifier: str) -> float:
         reset: float = await _with_at_most_one_request_async(
             redis, self._get_reset(identifier)
         )
