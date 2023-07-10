@@ -101,10 +101,7 @@ async def _with_at_most_one_request_async(
         return response
 
     command: Callable = getattr(redis, command_name)
-    # TODO: Remove async with once we release the new version of the client
-    async with redis:
-        command_response = await command(*command_args)
-
+    command_response = await command(*command_args)
     response = generator.send(command_response)
     return response
 

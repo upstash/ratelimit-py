@@ -627,37 +627,35 @@ files = [
 
 [[package]]
 name = "upstash-redis"
-version = "0.14.5"
-description = "Serverless Redis Sdk from Upstash"
+version = "0.15.0"
+description = "Serverless Redis SDK from Upstash"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "upstash_redis-0.14.5-py3-none-any.whl", hash = "sha256:7f6d30fe490f6d960d594cc4fc9220d6855e8f91c53d4a1b6f7c9092b0f4cfe8"},
-    {file = "upstash_redis-0.14.5.tar.gz", hash = "sha256:f27de1ea239516e411b65778085009e0dc6ec7adb4a7268840021d1e87072e67"},
+    {file = "upstash_redis-0.15.0-py3-none-any.whl", hash = "sha256:4a89913cb2bb2422610bc2a9c8d6b9a9d75d0674c22c5ea8037d35d343ee5846"},
+    {file = "upstash_redis-0.15.0.tar.gz", hash = "sha256:910f6a567142167b742c38efecfabf23f47e24fcbddb00a6b5845cb11064c3af"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.4,<4.0.0"
-pytest = ">=7.3.0,<8.0.0"
-pytest-asyncio = ">=0.21.0,<0.22.0"
 requests = ">=2.31.0,<3.0.0"
-urllib3 = ">=1.26.6,<2.0"
 
 [[package]]
 name = "urllib3"
-version = "1.26.16"
+version = "2.0.3"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+python-versions = ">=3.7"
 files = [
-    {file = "urllib3-1.26.16-py2.py3-none-any.whl", hash = "sha256:8d36afa7616d8ab714608411b4a3b13e58f463aee519024578e062e141dce20f"},
-    {file = "urllib3-1.26.16.tar.gz", hash = "sha256:8f135f6502756bde6b2a9b28989df5fbe87c9970cecaa69041edcce7f0589b14"},
+    {file = "urllib3-2.0.3-py3-none-any.whl", hash = "sha256:48e7fafa40319d358848e1bc6809b208340fafe2096f1725d05d67443d0483d1"},
+    {file = "urllib3-2.0.3.tar.gz", hash = "sha256:bee28b5e56addb8226c96f7f13ac28cb4c301dd5ea8a6ca179c0b9835e032825"},
 ]
 
 [package.extras]
-brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)", "brotlipy (>=0.6.0)"]
-secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "pyOpenSSL (>=0.14)", "urllib3-secure-extra"]
-socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
+brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
+secure = ["certifi", "cryptography (>=1.9)", "idna (>=2.0.0)", "pyopenssl (>=17.1.0)", "urllib3-secure-extra"]
+socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
+zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "yarl"
@@ -749,4 +747,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "8d4e85cf589008f4f38fdb6fdb3460fd4d036374ab8623426b2d11fe6631aefc"
+content-hash = "5cf1541bc430355f6ef8a32e45f7f5f3626aa097a36800cb39114e76e5923536"

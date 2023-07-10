@@ -113,7 +113,7 @@ You also have the option to try and wait for a request to pass in the given time
 
 It is very similar to the `limit` method and takes an identifier and returns the same 
 response. However if the current limit has already been exceeded, it will automatically 
-wait until the next window starts and will try again. Setting the timeout parameter (in seconbds) will cause the method to block a finite amount of time.
+wait until the next window starts and will try again. Setting the timeout parameter (in seconds) will cause the method to block a finite amount of time.
 
 ```python
 from upstash_ratelimit import Ratelimit, SlidingWindow

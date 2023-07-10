@@ -12,8 +12,7 @@ def redis():
 
 @pytest_asyncio.fixture
 async def async_redis():
-    redis = AsyncRedis.from_env()
-    async with redis:
+    async with AsyncRedis.from_env() as redis:
         yield redis
 
 

@@ -1,4 +1,4 @@
-__version__ = "0.4.2"
+__version__ = "0.5.0"
 
 from upstash_ratelimit.limiter import FixedWindow, Response, SlidingWindow, TokenBucket
 from upstash_ratelimit.ratelimit import Ratelimit
