@@ -14,7 +14,7 @@ class Ratelimit:
     """
 
     def __init__(
-        self, redis: Redis, limiter: Limiter, prefix: str = "upstash-ratelimit"
+        self, redis: Redis, limiter: Limiter, prefix: str = "@upstash/ratelimit"
     ) -> None:
         """
         :param redis: Upstash Redis instance to use.

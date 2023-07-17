@@ -63,8 +63,8 @@ ratelimit = Ratelimit(
     # Optional prefix for the keys used in Redis. This is useful
     # if you want to share a Redis instance with other applications
     # and want to avoid key collisions. The default prefix is
-    # "upstash-ratelimit"
-    prefix="upstash-ratelimit",
+    # "@upstash/ratelimit"
+    prefix="@upstash/ratelimit",
 )
 
 # Use a constant string to limit all requests with a single ratelimit
