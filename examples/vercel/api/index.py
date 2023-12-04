@@ -25,4 +25,3 @@ class handler(BaseHTTPRequestHandler):
         else:
             self.send_response(200)
             self.wfile.write("Hello!".encode("utf-8"))
-
