@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "upstash-ratelimit"
-version = "0.5.1"
+version = "1.0.0"
 description = "Serverless ratelimiting package from Upstash"
 authors = ["Upstash <support@upstash.com>", "Zgîmbău Tudor <tudor.zgimbau@gmail.com>"]
 maintainers = ["Upstash <support@upstash.com>"]
@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/upstash/ratelimit-python"
 keywords = ["ratelimit", "rate limit", "Upstash rate limit", "Redis rate limit"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Libraries",
 ]
@@ -26,7 +27,7 @@ packages = [{include = "upstash_ratelimit"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-upstash-redis = "^0.15.0"
+upstash-redis = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.0"

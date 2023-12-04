@@ -1,4 +1,4 @@
-from flask import Flask # type: ignore
+from flask import Flask  # type: ignore
 from upstash_redis import Redis
 
 from upstash_ratelimit import FixedWindow, Ratelimit
