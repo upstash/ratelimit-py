@@ -247,6 +247,30 @@ ratelimit = Ratelimit(
 )
 ```
 
+# Custom Rates
+
+When rate limiting, you may want different requests to consume different amounts of tokens.
+This could be useful when processing batches of requests where you want to rate limit based
+on items in the batch or when you want to rate limit based on the number of tokens.
+
+To achieve this, you can simply pass `rate` parameter when calling the limit method:
+
+```python
+
+from upstash_ratelimit import Ratelimit, FixedWindow
+from upstash_redis import Redis
+
+ratelimit = Ratelimit(
+    redis=Redis.from_env(),
+    limiter=FixedWindow(max_requests=10, window=10),
+)
+
+# pass rate as 5 to subtract 5 from the number of
+# allowed requests in the window:
+identifier = "api"
+response = ratelimit.limit(identifier, rate=5)
+```
+
 # Contributing
 
 ## Preparing the environment

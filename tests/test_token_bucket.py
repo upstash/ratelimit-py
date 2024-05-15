@@ -146,3 +146,20 @@ def test_get_reset_with_refills_that_should_be_made(redis: Redis) -> None:
     time.sleep(3)
 
     assert ratelimit.get_reset(id) >= last_reset + 2
+
+
+def test_custom_rate(redis: Redis) -> None:
+    ratelimit = Ratelimit(
+        redis=redis,
+        limiter=TokenBucket(max_tokens=10, refill_rate=1, interval=1),
+    )
+    rate = 2
+
+    id = random_id()
+
+    ratelimit.limit(id)
+    ratelimit.limit(id, rate)
+    assert ratelimit.get_remaining(id) == 7
+
+    ratelimit.limit(id, rate)
+    assert ratelimit.get_remaining(id) == 5

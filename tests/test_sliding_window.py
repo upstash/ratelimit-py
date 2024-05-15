@@ -130,3 +130,20 @@ def test_get_reset(redis: Redis) -> None:
 
     with patch("time.time", return_value=1688910786.167):
         assert ratelimit.get_reset(random_id()) == approx(1688910790.0)
+
+
+def test_custom_rate(redis: Redis) -> None:
+    ratelimit = Ratelimit(
+        redis=redis,
+        limiter=SlidingWindow(max_requests=10, window=5),
+    )
+    rate = 2
+
+    id = random_id()
+
+    ratelimit.limit(id)
+    ratelimit.limit(id, rate)
+    assert ratelimit.get_remaining(id) == 7
+
+    ratelimit.limit(id, rate)
+    assert ratelimit.get_remaining(id) == 5

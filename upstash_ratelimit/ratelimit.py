@@ -32,7 +32,7 @@ class Ratelimit:
         self._limiter = limiter
         self._prefix = prefix
 
-    def limit(self, identifier: str) -> Response:
+    def limit(self, identifier: str, rate: int = 1) -> Response:
         """
         Determines if a request should pass or be rejected based on the identifier 
         and previously chosen ratelimit.
@@ -59,12 +59,14 @@ class Ratelimit:
         :param identifier: Identifier to ratelimit. Use a constant string to \
             limit all requests, or user ids, API keys, or IP addresses for \
             individual limits.
+        :param rate: Rate with which to subtract from the limit of the \
+            identifier.
         """
 
         key = f"{self._prefix}:{identifier}"
-        return self._limiter.limit(self._redis, key)
+        return self._limiter.limit(self._redis, key, rate)
 
-    def block_until_ready(self, identifier: str, timeout: float) -> Response:
+    def block_until_ready(self, identifier: str, timeout: float, rate: int = 1) -> Response:
         """
         Blocks until the request may pass or timeout is reached.
         
@@ -95,6 +97,8 @@ class Ratelimit:
             individual limits.
         :param timeout: Maximum time in seconds to wait until the request \
             may pass.
+        :param rate: Rate with which to subtract from the limit of the \
+            identifier.
         """
 
         if timeout <= 0:
@@ -104,7 +108,7 @@ class Ratelimit:
         deadline = now_s() + timeout
 
         while True:
-            response = self.limit(identifier)
+            response = self.limit(identifier, rate)
             if response.allowed:
                 break
 

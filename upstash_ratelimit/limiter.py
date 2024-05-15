@@ -35,11 +35,11 @@ class Response:
 
 class Limiter(abc.ABC):
     @abc.abstractmethod
-    def limit(self, redis: Redis, identifier: str) -> Response:
+    def limit(self, redis: Redis, identifier: str, rate: int = 1) -> Response:
         pass
 
     @abc.abstractmethod
-    async def limit_async(self, redis: AsyncRedis, identifier: str) -> Response:
+    async def limit_async(self, redis: AsyncRedis, identifier: str, rate: int = 1) -> Response:
         pass
 
     @abc.abstractmethod
@@ -108,16 +108,16 @@ async def _with_at_most_one_request_async(
 
 class AbstractLimiter(Limiter):
     @abc.abstractmethod
-    def _limit(self, identifier: str) -> Generator:
+    def _limit(self, identifier: str, rate: int = 1) -> Generator:
         pass
 
-    def limit(self, redis: Redis, identifier: str) -> Response:
-        response: Response = _with_at_most_one_request(redis, self._limit(identifier))
+    def limit(self, redis: Redis, identifier: str, rate: int = 1) -> Response:
+        response: Response = _with_at_most_one_request(redis, self._limit(identifier, rate))
         return response
 
-    async def limit_async(self, redis: AsyncRedis, identifier: str) -> Response:
+    async def limit_async(self, redis: AsyncRedis, identifier: str, rate: int = 1) -> Response:
         response: Response = await _with_at_most_one_request_async(
-            redis, self._limit(identifier)
+            redis, self._limit(identifier, rate)
         )
         return response
 
@@ -171,17 +171,18 @@ class FixedWindow(AbstractLimiter):
     """
 
     SCRIPT = """
-    local key    = KEYS[1] -- identifier including prefixes
-    local window = ARGV[1] -- interval in milliseconds
-    
-    local num_requests = redis.call("INCR", key)
-    if num_requests == 1 then 
-      -- The first time this key is set, the value will be 1.
-      -- So we only need the expire command once
-      redis.call("PEXPIRE", key, window)
+    local key           = KEYS[1]
+    local window        = ARGV[1]
+    local increment_by  = ARGV[2] -- increment rate per request at a given value, default is 1
+
+    local r = redis.call("INCRBY", key, increment_by)
+    if r == tonumber(increment_by) then
+    -- The first time this key is set, the value will be equal to increment_by.
+    -- So we only need the expire command once
+    redis.call("PEXPIRE", key, window)
     end
-    
-    return num_requests
+
+    return r
     """
 
     def __init__(self, max_requests: int, window: int, unit: UnitT = "s") -> None:
@@ -197,13 +198,13 @@ class FixedWindow(AbstractLimiter):
         self._max_requests = max_requests
         self._window = to_ms(window, unit)
 
-    def _limit(self, identifier: str) -> Generator:
+    def _limit(self, identifier: str, rate: int = 1) -> Generator:
         curr_window = now_ms() // self._window
         key = f"{identifier}:{curr_window}"
 
         num_requests = yield (
             "eval",
-            (FixedWindow.SCRIPT, [key], [self._window]),
+            (FixedWindow.SCRIPT, [key], [self._window, rate]),
         )
 
         yield Response(
@@ -245,38 +246,36 @@ class SlidingWindow(AbstractLimiter):
     """
 
     SCRIPT = """
-    local key          = KEYS[1]           -- identifier including prefixes
-    local prev_key     = KEYS[2]           -- key of the previous bucket
-    local max_requests = tonumber(ARGV[1]) -- max requests per window
-    local now          = tonumber(ARGV[2]) -- current timestamp in milliseconds
-    local window       = tonumber(ARGV[3]) -- interval in milliseconds
-    
-    local num_requests = redis.call("GET", key)
-    if num_requests == false then
-      num_requests = 0
+    local current_key  = KEYS[1]           -- identifier including prefixes
+    local previous_key = KEYS[2]           -- key of the previous bucket
+    local tokens       = tonumber(ARGV[1]) -- tokens per window
+    local now          = ARGV[2]           -- current timestamp in milliseconds
+    local window       = ARGV[3]           -- interval in milliseconds
+    local increment_by = ARGV[4]           -- increment rate per request at a given value, default is 1
+
+    local requests_in_current_window = redis.call("GET", current_key)
+    if requests_in_current_window == false then
+        requests_in_current_window = 0
     end
 
-    local prev_num_requests = redis.call("GET", prev_key)
-    if prev_num_requests == false then
-      prev_num_requests = 0
+    local requests_in_previous_window = redis.call("GET", previous_key)
+    if requests_in_previous_window == false then
+        requests_in_previous_window = 0
+    end
+    local percentage_in_current = ( now % window ) / window
+    -- weighted requests to consider from the previous window
+    requests_in_previous_window = math.floor(( 1 - percentage_in_current ) * requests_in_previous_window)
+    if requests_in_previous_window + requests_in_current_window >= tokens then
+        return -1
     end
 
-    local prev_window_weight = 1 - ((now % window) / window)
-    -- requests to consider from prev window
-    prev_num_requests = math.floor(prev_num_requests * prev_window_weight)
-
-    if num_requests + prev_num_requests >= max_requests then
-      return -1
+    local new_value = redis.call("INCRBY", current_key, increment_by)
+    if new_value == tonumber(increment_by) then
+        -- The first time this key is set, the value will be equal to increment_by.
+        -- So we only need the expire command once
+        redis.call("PEXPIRE", current_key, window * 2 + 1000) -- Enough time to overlap with a new window + 1 second
     end
-
-    num_requests = redis.call("INCR", key)
-    if num_requests == 1 then 
-      -- The first time this key is set, the value will be 1.
-      -- So we only need the expire command once
-      redis.call("PEXPIRE", key, window * 2 + 1000) -- Enough time to overlap with a new window + 1 second
-    end
-
-    return max_requests - (num_requests + prev_num_requests)
+    return tokens - ( new_value + requests_in_previous_window )
     """
 
     def __init__(self, max_requests: int, window: int, unit: UnitT = "s") -> None:
@@ -292,7 +291,7 @@ class SlidingWindow(AbstractLimiter):
         self._max_requests = max_requests
         self._window = to_ms(window, unit)
 
-    def _limit(self, identifier: str) -> Generator:
+    def _limit(self, identifier: str, rate: int = 1) -> Generator:
         now = now_ms()
 
         curr_window = now // self._window
@@ -306,7 +305,7 @@ class SlidingWindow(AbstractLimiter):
             (
                 SlidingWindow.SCRIPT,
                 [key, prev_key],
-                [self._max_requests, now, self._window],
+                [self._max_requests, now, self._window, rate],
             ),
         )
 
@@ -362,39 +361,40 @@ class TokenBucket(AbstractLimiter):
     """
 
     SCRIPT = """
-    local key         = KEYS[1]           -- identifier including prefixes
-    local max_tokens  = tonumber(ARGV[1]) -- maximum number of tokens
-    local interval    = tonumber(ARGV[2]) -- size of the interval in milliseconds
-    local refill_rate = tonumber(ARGV[3]) -- how many tokens are refilled after each interval
-    local now         = tonumber(ARGV[4]) -- current timestamp in milliseconds
-
+    local key          = KEYS[1]           -- identifier including prefixes
+    local max_tokens   = tonumber(ARGV[1]) -- maximum number of tokens
+    local interval     = tonumber(ARGV[2]) -- size of the window in milliseconds
+    local refill_rate  = tonumber(ARGV[3]) -- how many tokens are refilled after each interval
+    local now          = tonumber(ARGV[4]) -- current timestamp in milliseconds
+    local increment_by = tonumber(ARGV[5]) -- how many tokens to consume, default is 1
+            
     local bucket = redis.call("HMGET", key, "refilled_at", "tokens")
-    
+            
     local refilled_at
     local tokens
 
     if bucket[1] == false then
-      refilled_at = now
-      tokens = max_tokens
+        refilled_at = now
+        tokens = max_tokens
     else
-      refilled_at = tonumber(bucket[1])
-      tokens = tonumber(bucket[2])
+        refilled_at = tonumber(bucket[1])
+        tokens = tonumber(bucket[2])
     end
-
+            
     if now >= refilled_at + interval then
-      local num_refills = math.floor((now - refilled_at) / interval)
-      tokens = math.min(max_tokens, tokens + num_refills * refill_rate)
+        local num_refills = math.floor((now - refilled_at) / interval)
+        tokens = math.min(max_tokens, tokens + num_refills * refill_rate)
 
-      refilled_at = refilled_at + num_refills * interval
+        refilled_at = refilled_at + num_refills * interval
     end
 
     if tokens == 0 then
-      return {-1, refilled_at + interval}
+        return {-1, refilled_at + interval}
     end
 
-    local remaining = tokens - 1
+    local remaining = tokens - increment_by
     local expire_at = math.ceil(((max_tokens - remaining) / refill_rate)) * interval
-
+            
     redis.call("HSET", key, "refilled_at", refilled_at, "tokens", remaining)
     redis.call("PEXPIRE", key, expire_at)
     return {remaining, refilled_at + interval}
@@ -419,13 +419,13 @@ class TokenBucket(AbstractLimiter):
         self._refill_rate = refill_rate
         self._interval = to_ms(interval, unit)
 
-    def _limit(self, identifier: str) -> Generator:
+    def _limit(self, identifier: str, rate: int = 1) -> Generator:
         remaining, refill_at = yield (
             "eval",
             (
                 TokenBucket.SCRIPT,
                 [identifier],
-                [self._max_tokens, self._interval, self._refill_rate, now_ms()],
+                [self._max_tokens, self._interval, self._refill_rate, now_ms(), rate],
             ),
         )
 
