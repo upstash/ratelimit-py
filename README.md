@@ -1,6 +1,11 @@
 # Upstash Ratelimit Python SDK
 
-upstash-ratelimit is a connectionless rate limiting library for Python, designed to be used in serverless environments such as:
+> [!NOTE]
+> **This project is in GA Stage.**
+> The Upstash Professional Support fully covers this project. It receives regular updates, and bug fixes. The Upstash team is committed to maintaining and improving its functionality.
+
+`upstash-ratelimit` is a connectionless rate limiting library for Python, designed to be used in serverless environments such as:
+
 - AWS Lambda
 - Vercel Serverless
 - Google Cloud Functions
