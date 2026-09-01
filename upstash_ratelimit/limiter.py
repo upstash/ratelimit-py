@@ -388,7 +388,7 @@ class TokenBucket(AbstractLimiter):
         refilled_at = refilled_at + num_refills * interval
     end
 
-    if tokens == 0 then
+    if tokens < increment_by then
         return {-1, refilled_at + interval}
     end
 
