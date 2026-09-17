@@ -170,7 +170,7 @@ class FixedWindow(AbstractLimiter):
       requests quickly.
     """
 
-    SCRIPT = """
+    SCRIPT = """#!lua flags=allow-key-locking
     local key           = KEYS[1]
     local window        = ARGV[1]
     local increment_by  = ARGV[2] -- increment rate per request at a given value, default is 1
@@ -245,7 +245,7 @@ class SlidingWindow(AbstractLimiter):
     - Good performance allows this to scale to very high loads.
     """
 
-    SCRIPT = """
+    SCRIPT = """#!lua flags=allow-key-locking
     local current_key  = KEYS[1]           -- identifier including prefixes
     local previous_key = KEYS[2]           -- key of the previous bucket
     local tokens       = tonumber(ARGV[1]) -- tokens per window
@@ -360,7 +360,7 @@ class TokenBucket(AbstractLimiter):
       of tokens higher than the refill rate.
     """
 
-    SCRIPT = """
+    SCRIPT = """#!lua flags=allow-key-locking
     local key          = KEYS[1]           -- identifier including prefixes
     local max_tokens   = tonumber(ARGV[1]) -- maximum number of tokens
     local interval     = tonumber(ARGV[2]) -- size of the window in milliseconds
