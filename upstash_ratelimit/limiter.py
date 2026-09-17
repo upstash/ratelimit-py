@@ -1,13 +1,16 @@
 import abc
 import dataclasses
-from collections.abc import Generator
-from typing import Any, Callable
+from typing import Any, Callable, Generator
 
 from upstash_redis import Redis
 from upstash_redis.asyncio import Redis as AsyncRedis
 
 from upstash_ratelimit.typing import UnitT
 from upstash_ratelimit.utils import ms_to_s, now_ms, to_ms
+
+# Yields a (command_name, args) pair, is sent the command result,
+# then yields the final value.
+_CommandGenerator = Generator[Any, Any, None]
 
 
 @dataclasses.dataclass
@@ -59,7 +62,7 @@ class Limiter(abc.ABC):
         pass
 
 
-def _with_at_most_one_request(redis: Redis, generator: Generator) -> Any:
+def _with_at_most_one_request(redis: Redis, generator: _CommandGenerator) -> Any:
     """
     A function that makes at most one HTTP request over the
     given Redis instance.
@@ -88,7 +91,7 @@ def _with_at_most_one_request(redis: Redis, generator: Generator) -> Any:
 
 
 async def _with_at_most_one_request_async(
-    redis: AsyncRedis, generator: Generator
+    redis: AsyncRedis, generator: _CommandGenerator
 ) -> Any:
     """
     Async variant of the `_with_one_request_fn` defined above.
@@ -108,7 +111,7 @@ async def _with_at_most_one_request_async(
 
 class AbstractLimiter(Limiter):
     @abc.abstractmethod
-    def _limit(self, identifier: str, rate: int = 1) -> Generator:
+    def _limit(self, identifier: str, rate: int = 1) -> _CommandGenerator:
         pass
 
     def limit(self, redis: Redis, identifier: str, rate: int = 1) -> Response:
@@ -122,7 +125,7 @@ class AbstractLimiter(Limiter):
         return response
 
     @abc.abstractmethod
-    def _get_remaining(self, identifier: str) -> Generator:
+    def _get_remaining(self, identifier: str) -> _CommandGenerator:
         pass
 
     def get_remaining(self, redis: Redis, identifier: str) -> int:
@@ -138,7 +141,7 @@ class AbstractLimiter(Limiter):
         return remaining
 
     @abc.abstractmethod
-    def _get_reset(self, identifier: str) -> Generator:
+    def _get_reset(self, identifier: str) -> _CommandGenerator:
         pass
 
     def get_reset(self, redis: Redis, identifier: str) -> float:
@@ -198,7 +201,7 @@ class FixedWindow(AbstractLimiter):
         self._max_requests = max_requests
         self._window = to_ms(window, unit)
 
-    def _limit(self, identifier: str, rate: int = 1) -> Generator:
+    def _limit(self, identifier: str, rate: int = 1) -> _CommandGenerator:
         curr_window = now_ms() // self._window
         key = f"{identifier}:{curr_window}"
 
@@ -214,7 +217,7 @@ class FixedWindow(AbstractLimiter):
             reset=ms_to_s((curr_window + 1) * self._window),
         )
 
-    def _get_remaining(self, identifier: str) -> Generator:
+    def _get_remaining(self, identifier: str) -> _CommandGenerator:
         curr_window = now_ms() // self._window
         key = f"{identifier}:{curr_window}"
 
@@ -228,7 +231,7 @@ class FixedWindow(AbstractLimiter):
 
         yield max(0, self._max_requests - int(num_requests))  # type: ignore[arg-type]
 
-    def _get_reset(self, _: str) -> Generator:
+    def _get_reset(self, _: str) -> _CommandGenerator:
         yield (None, None)  # Signal that we don't need to make a remote call
 
         curr_window = now_ms() // self._window
@@ -291,7 +294,7 @@ class SlidingWindow(AbstractLimiter):
         self._max_requests = max_requests
         self._window = to_ms(window, unit)
 
-    def _limit(self, identifier: str, rate: int = 1) -> Generator:
+    def _limit(self, identifier: str, rate: int = 1) -> _CommandGenerator:
         now = now_ms()
 
         curr_window = now // self._window
@@ -316,7 +319,7 @@ class SlidingWindow(AbstractLimiter):
             reset=ms_to_s((curr_window + 1) * self._window),
         )
 
-    def _get_remaining(self, identifier: str) -> Generator:
+    def _get_remaining(self, identifier: str) -> _CommandGenerator:
         now = now_ms()
 
         window = now // self._window
@@ -338,7 +341,7 @@ class SlidingWindow(AbstractLimiter):
         remaining = self._max_requests - (prev_num_requests + num_requests)
         yield max(0, remaining)
 
-    def _get_reset(self, _: str) -> Generator:
+    def _get_reset(self, _: str) -> _CommandGenerator:
         yield (None, None)  # Signal that we don't need to make a remote call
 
         curr_window = now_ms() // self._window
@@ -419,7 +422,7 @@ class TokenBucket(AbstractLimiter):
         self._refill_rate = refill_rate
         self._interval = to_ms(interval, unit)
 
-    def _limit(self, identifier: str, rate: int = 1) -> Generator:
+    def _limit(self, identifier: str, rate: int = 1) -> _CommandGenerator:
         remaining, refill_at = yield (
             "eval",
             (
@@ -436,7 +439,7 @@ class TokenBucket(AbstractLimiter):
             reset=ms_to_s(refill_at),
         )
 
-    def _get_remaining(self, identifier: str) -> Generator:
+    def _get_remaining(self, identifier: str) -> _CommandGenerator:
         now = now_ms()
 
         refilled_at_, tokens_ = yield (
@@ -456,7 +459,7 @@ class TokenBucket(AbstractLimiter):
 
         yield tokens
 
-    def _get_reset(self, identifier: str) -> Generator:
+    def _get_reset(self, identifier: str) -> _CommandGenerator:
         now = now_ms()
 
         refilled_at_ = yield (
