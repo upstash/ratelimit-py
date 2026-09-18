@@ -163,3 +163,30 @@ def test_custom_rate(redis: Redis) -> None:
 
     ratelimit.limit(id, rate)
     assert ratelimit.get_remaining(id) == 5
+
+
+def test_rate_larger_than_remaining_is_rejected_without_consuming(
+    redis: Redis,
+) -> None:
+    # max_tokens > 1 so a single request can ask for more tokens than remain.
+    ratelimit = Ratelimit(
+        redis=redis,
+        limiter=TokenBucket(max_tokens=10, refill_rate=10, interval=1, unit="d"),
+    )
+
+    id = random_id()
+
+    # Leave 2 tokens in the bucket.
+    first = ratelimit.limit(id, rate=8)
+    assert first.allowed is True
+    assert first.remaining == 2
+
+    # 2 tokens left, ask for 5: must be rejected. It must NOT drive the bucket
+    # negative (which would lock the identifier out long past this request).
+    denied = ratelimit.limit(id, rate=5)
+    assert denied.allowed is False
+
+    # The 2 tokens the denied request must not have consumed are still spendable.
+    ok = ratelimit.limit(id, rate=2)
+    assert ok.allowed is True
+    assert ok.remaining == 0
